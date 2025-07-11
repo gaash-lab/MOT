@@ -1,0 +1,6 @@
+outputs/
+logs/
+jsons/
+weights/
+*.pth
+*.pt
