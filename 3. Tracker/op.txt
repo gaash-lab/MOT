@@ -1,0 +1,234 @@
+Running DanceTrack val...
+
+
+
+Tracking dancetrack0004...
+
+
+
+Tracking dancetrack0005...
+
+
+
+Tracking dancetrack0007...
+Reusing ID 2 for detection 0
+
+
+
+Tracking dancetrack0010...
+Reusing ID 3 for detection 0
+Reusing ID 6 for detection 0
+Reusing ID 4 for detection 0
+
+
+
+Tracking dancetrack0014...
+Reusing ID 7 for detection 0
+Reusing ID 8 for detection 0
+Reusing ID 4 for detection 0
+Reusing ID 3 for detection 0
+Reusing ID 4 for detection 0
+Reusing ID 5 for detection 0
+Reusing ID 6 for detection 0
+Reusing ID 1 for detection 0
+Reusing ID 2 for detection 0
+
+
+
+Tracking dancetrack0018...
+
+
+
+Tracking dancetrack0019...
+Reusing ID 2 for detection 0
+Reusing ID 7 for detection 0
+Reusing ID 1 for detection 0
+Reusing ID 4 for detection 0
+Reusing ID 18 for detection 0
+
+
+
+Tracking dancetrack0025...
+Reusing ID 2 for detection 0
+Reusing ID 9 for detection 0
+Reusing ID 5 for detection 0
+Reusing ID 6 for detection 0
+Reusing ID 19 for detection 0
+Reusing ID 25 for detection 0
+Reusing ID 19 for detection 0
+
+
+
+Tracking dancetrack0026...
+Reusing ID 13 for detection 0
+Reusing ID 12 for detection 0
+
+
+
+Tracking dancetrack0030...
+
+
+
+Tracking dancetrack0034...
+Reusing ID 9 for detection 0
+Reusing ID 17 for detection 0
+Reusing ID 7 for detection 0
+Reusing ID 2 for detection 0
+Reusing ID 13 for detection 0
+Reusing ID 1 for detection 0
+Reusing ID 5 for detection 0
+Reusing ID 3 for detection 0
+Reusing ID 28 for detection 0
+Reusing ID 28 for detection 0
+Reusing ID 15 for detection 0
+Reusing ID 13 for detection 0
+Reusing ID 8 for detection 0
+Reusing ID 25 for detection 0
+
+
+
+Tracking dancetrack0035...
+Reusing ID 5 for detection 0
+
+
+
+Tracking dancetrack0041...
+Reusing ID 15 for detection 0
+Reusing ID 1 for detection 0
+Reusing ID 6 for detection 0
+Reusing ID 5 for detection 0
+Reusing ID 3 for detection 0
+Reusing ID 3 for detection 0
+Reusing ID 14 for detection 0
+Reusing ID 30 for detection 0
+Reusing ID 17 for detection 0
+Reusing ID 42 for detection 0
+Reusing ID 11 for detection 0
+Reusing ID 6 for detection 0
+Reusing ID 31 for detection 0
+Reusing ID 22 for detection 0
+
+
+
+Tracking dancetrack0043...
+
+
+
+Tracking dancetrack0047...
+Reusing ID 8 for detection 0
+Reusing ID 8 for detection 0
+Reusing ID 7 for detection 0
+
+
+
+Tracking dancetrack0058...
+
+
+
+Tracking dancetrack0063...
+Reusing ID 9 for detection 0
+Reusing ID 36 for detection 0
+Reusing ID 62 for detection 0
+Reusing ID 1 for detection 0
+Reusing ID 90 for detection 0
+Reusing ID 2 for detection 0
+Reusing ID 67 for detection 0
+Reusing ID 71 for detection 0
+Reusing ID 88 for detection 0
+Reusing ID 4 for detection 0
+Reusing ID 101 for detection 0
+Reusing ID 113 for detection 0
+Reusing ID 24 for detection 0
+Reusing ID 85 for detection 0
+Reusing ID 60 for detection 0
+Reusing ID 136 for detection 0
+Reusing ID 139 for detection 0
+Reusing ID 113 for detection 0
+Reusing ID 135 for detection 0
+
+
+
+Tracking dancetrack0065...
+
+
+
+Tracking dancetrack0073...
+Reusing ID 7 for detection 0
+Reusing ID 10 for detection 0
+Reusing ID 16 for detection 0
+Reusing ID 17 for detection 0
+Reusing ID 22 for detection 0
+Reusing ID 13 for detection 0
+Reusing ID 1 for detection 0
+
+
+
+Tracking dancetrack0077...
+Reusing ID 2 for detection 0
+
+
+
+Tracking dancetrack0079...
+Reusing ID 8 for detection 0
+Reusing ID 8 for detection 0
+
+
+
+Tracking dancetrack0081...
+Reusing ID 4 for detection 0
+Reusing ID 19 for detection 0
+Reusing ID 25 for detection 0
+Reusing ID 7 for detection 0
+Reusing ID 23 for detection 0
+Reusing ID 4 for detection 0
+Reusing ID 39 for detection 0
+Reusing ID 24 for detection 0
+Reusing ID 36 for detection 0
+Reusing ID 12 for detection 0
+Reusing ID 30 for detection 0
+Reusing ID 2 for detection 0
+Reusing ID 35 for detection 0
+Reusing ID 25 for detection 0
+Reusing ID 11 for detection 0
+Reusing ID 47 for detection 0
+Reusing ID 13 for detection 0
+Reusing ID 12 for detection 0
+Reusing ID 1 for detection 0
+
+
+
+Tracking dancetrack0090...
+Reusing ID 16 for detection 0
+Reusing ID 5 for detection 0
+Reusing ID 4 for detection 0
+Reusing ID 1 for detection 0
+Reusing ID 12 for detection 0
+
+
+
+Tracking dancetrack0094...
+Reusing ID 1 for detection 0
+Reusing ID 12 for detection 0
+Reusing ID 15 for detection 0
+Reusing ID 9 for detection 0
+Reusing ID 10 for detection 0
+Reusing ID 29 for detection 0
+Reusing ID 25 for detection 0
+Reusing ID 31 for detection 0
+Reusing ID 32 for detection 0
+Reusing ID 30 for detection 0
+Reusing ID 22 for detection 0
+Reusing ID 15 for detection 0
+Reusing ID 26 for detection 0
+Reusing ID 19 for detection 0
+Reusing ID 18 for detection 0
+Reusing ID 32 for detection 0
+
+
+
+Tracking dancetrack0097...
+Running post-processing...
+Evaluating...
+59.873 63.260 90.045 45.646 78.869
+247.703580668776
+

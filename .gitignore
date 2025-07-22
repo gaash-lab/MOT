@@ -4,3 +4,4 @@ jsons/
 weights/
 *.pth
 *.pt
+__pycache__

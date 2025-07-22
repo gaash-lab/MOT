@@ -14,7 +14,7 @@ def make_parser():
     parser = argparse.ArgumentParser("Tracker")
 
     # Basic
-    parser.add_argument("--pickle_dir", type=str, default="/home/tawheed/MOT/TrackTrack/outputs/2. det_feat/")
+    parser.add_argument("--pickle_dir", type=str, default="/DATA/Tawheed/appended/")
     parser.add_argument("--output_dir", type=str, default="../outputs/3. track/")
     parser.add_argument("--data_dir", type=str, default="/DATA/Tawheed/MOTDatasets/")
     parser.add_argument("--dataset", type=str, default="MOT17")
@@ -29,6 +29,8 @@ def make_parser():
     parser.add_argument("--penalty_q", type=float, default=0.40)
     parser.add_argument("--reduce_step", type=float, default=0.05)
     parser.add_argument("--tai_thr", type=float, default=0.55)
+    parser.add_argument("--feat_dim", type=int, default=2048)
+    parser.add_argument("--pose_dim", type=int, default=34)
 
     return parser
 
@@ -37,6 +39,7 @@ def track(detections, detections_95, data_path, result_folder, mode):
     # For each video
     total_time, total_count = 0, 0
     for vid_name in detections.keys():
+        print(f"\n\n\nTracking {vid_name}...")
         # Set proper parameters
         set_parameters(args, vid_name, mode)
 

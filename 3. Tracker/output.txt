@@ -1,0 +1,113 @@
+Running DanceTrack val...
+
+
+
+Tracking dancetrack0004...
+
+
+
+Tracking dancetrack0005...
+
+
+
+Tracking dancetrack0007...
+
+
+
+Tracking dancetrack0010...
+
+
+
+Tracking dancetrack0014...
+Reusing ID 5 for detection 0
+
+
+
+Tracking dancetrack0018...
+
+
+
+Tracking dancetrack0019...
+
+
+
+Tracking dancetrack0025...
+
+
+
+Tracking dancetrack0026...
+
+
+
+Tracking dancetrack0030...
+
+
+
+Tracking dancetrack0034...
+
+
+
+Tracking dancetrack0035...
+
+
+
+Tracking dancetrack0041...
+Reusing ID 5 for detection 0
+Reusing ID 36 for detection 0
+
+
+
+Tracking dancetrack0043...
+
+
+
+Tracking dancetrack0047...
+
+
+
+Tracking dancetrack0058...
+
+
+
+Tracking dancetrack0063...
+Reusing ID 151 for detection 0
+
+
+
+Tracking dancetrack0065...
+
+
+
+Tracking dancetrack0073...
+
+
+
+Tracking dancetrack0077...
+
+
+
+Tracking dancetrack0079...
+
+
+
+Tracking dancetrack0081...
+Reusing ID 25 for detection 0
+Reusing ID 2 for detection 0
+
+
+
+Tracking dancetrack0090...
+
+
+
+Tracking dancetrack0094...
+Reusing ID 35 for detection 0
+
+
+
+Tracking dancetrack0097...
+Running post-processing...
+Evaluating...
+59.520 62.228 90.041 45.050 78.972
+239.44214989107715
+

@@ -1,0 +1,283 @@
+Running DanceTrack val...
+
+
+
+Tracking dancetrack0004...
+Occlusion detected for track 7 at frame 186
+Occlusion detected for track 1 at frame 628
+Occlusion detected for track 2 at frame 889
+
+
+
+Tracking dancetrack0005...
+Occlusion detected for track 3 at frame 779
+Occlusion detected for track 4 at frame 1107
+
+
+
+Tracking dancetrack0007...
+Occlusion detected for track 2 at frame 722
+
+
+
+Tracking dancetrack0010...
+Occlusion detected for track 3 at frame 291
+Occlusion detected for track 4 at frame 598
+Occlusion detected for track 6 at frame 612
+
+
+
+Tracking dancetrack0014...
+Occlusion detected for track 7 at frame 123
+Occlusion detected for track 4 at frame 135
+Occlusion detected for track 8 at frame 163
+Occlusion detected for track 3 at frame 237
+Occlusion detected for track 2 at frame 543
+Occlusion detected for track 5 at frame 548
+Occlusion detected for track 8 at frame 768
+Occlusion detected for track 9 at frame 850
+Occlusion detected for track 14 at frame 853
+Occlusion detected for track 15 at frame 879
+Occlusion detected for track 1 at frame 884
+Occlusion detected for track 6 at frame 887
+
+
+
+Tracking dancetrack0018...
+
+
+
+Tracking dancetrack0019...
+Occlusion detected for track 2 at frame 816
+Occlusion detected for track 7 at frame 1685
+Occlusion detected for track 1 at frame 1707
+Occlusion detected for track 4 at frame 1777
+Occlusion detected for track 22 at frame 1797
+Occlusion detected for track 18 at frame 2022
+
+
+
+Tracking dancetrack0025...
+Occlusion detected for track 9 at frame 44
+Occlusion detected for track 2 at frame 172
+Occlusion detected for track 20 at frame 487
+Occlusion detected for track 5 at frame 548
+Occlusion detected for track 6 at frame 656
+Occlusion detected for track 25 at frame 684
+Occlusion detected for track 20 at frame 738
+Occlusion detected for track 25 at frame 768
+Occlusion detected for track 6 at frame 779
+
+
+
+Tracking dancetrack0026...
+Occlusion detected for track 13 at frame 102
+Occlusion detected for track 12 at frame 120
+Occlusion detected for track 11 at frame 248
+Occlusion detected for track 24 at frame 250
+Occlusion detected for track 15 at frame 259
+Occlusion detected for track 10 at frame 260
+Occlusion detected for track 12 at frame 262
+Occlusion detected for track 21 at frame 271
+Occlusion detected for track 22 at frame 280
+Occlusion detected for track 9 at frame 281
+Occlusion detected for track 14 at frame 287
+Occlusion detected for track 19 at frame 287
+Occlusion detected for track 6 at frame 291
+Occlusion detected for track 8 at frame 295
+Occlusion detected for track 25 at frame 299
+
+
+
+Tracking dancetrack0030...
+
+
+
+Tracking dancetrack0034...
+Occlusion detected for track 9 at frame 44
+Occlusion detected for track 17 at frame 119
+Occlusion detected for track 13 at frame 268
+Occlusion detected for track 7 at frame 278
+Occlusion detected for track 2 at frame 292
+Occlusion detected for track 29 at frame 353
+Occlusion detected for track 5 at frame 391
+Occlusion detected for track 15 at frame 406
+Occlusion detected for track 1 at frame 419
+Occlusion detected for track 2 at frame 442
+Occlusion detected for track 3 at frame 475
+Occlusion detected for track 13 at frame 487
+Occlusion detected for track 13 at frame 590
+Occlusion detected for track 8 at frame 774
+Occlusion detected for track 26 at frame 868
+
+
+
+Tracking dancetrack0035...
+Occlusion detected for track 5 at frame 288
+Occlusion detected for track 12 at frame 461
+
+
+
+Tracking dancetrack0041...
+Occlusion detected for track 15 at frame 177
+Occlusion detected for track 1 at frame 208
+Occlusion detected for track 6 at frame 338
+Occlusion detected for track 5 at frame 371
+Occlusion detected for track 3 at frame 373
+Occlusion detected for track 33 at frame 514
+Occlusion detected for track 30 at frame 602
+Occlusion detected for track 17 at frame 643
+Occlusion detected for track 11 at frame 696
+Occlusion detected for track 14 at frame 817
+Occlusion detected for track 31 at frame 817
+Occlusion detected for track 42 at frame 850
+Occlusion detected for track 26 at frame 927
+Occlusion detected for track 42 at frame 947
+Occlusion detected for track 19 at frame 951
+Occlusion detected for track 22 at frame 965
+
+
+
+Tracking dancetrack0043...
+
+
+
+Tracking dancetrack0047...
+Occlusion detected for track 8 at frame 476
+Occlusion detected for track 8 at frame 616
+Occlusion detected for track 7 at frame 1036
+Occlusion detected for track 24 at frame 1192
+
+
+
+Tracking dancetrack0058...
+Occlusion detected for track 3 at frame 1215
+
+
+
+Tracking dancetrack0063...
+Occlusion detected for track 9 at frame 152
+Occlusion detected for track 36 at frame 239
+Occlusion detected for track 62 at frame 318
+Occlusion detected for track 67 at frame 327
+Occlusion detected for track 71 at frame 353
+Occlusion detected for track 88 at frame 387
+Occlusion detected for track 1 at frame 393
+Occlusion detected for track 90 at frame 393
+Occlusion detected for track 2 at frame 419
+Occlusion detected for track 4 at frame 506
+Occlusion detected for track 101 at frame 542
+Occlusion detected for track 113 at frame 624
+Occlusion detected for track 24 at frame 684
+Occlusion detected for track 85 at frame 697
+Occlusion detected for track 60 at frame 727
+Occlusion detected for track 136 at frame 907
+Occlusion detected for track 139 at frame 949
+Occlusion detected for track 113 at frame 953
+Occlusion detected for track 135 at frame 982
+
+
+
+Tracking dancetrack0065...
+
+
+
+Tracking dancetrack0073...
+Occlusion detected for track 10 at frame 157
+Occlusion detected for track 7 at frame 161
+Occlusion detected for track 16 at frame 306
+Occlusion detected for track 17 at frame 310
+Occlusion detected for track 1 at frame 334
+Occlusion detected for track 13 at frame 505
+Occlusion detected for track 23 at frame 510
+Occlusion detected for track 11 at frame 633
+
+
+
+Tracking dancetrack0077...
+Occlusion detected for track 2 at frame 236
+Occlusion detected for track 13 at frame 237
+
+
+
+Tracking dancetrack0079...
+Occlusion detected for track 8 at frame 111
+Occlusion detected for track 8 at frame 531
+Occlusion detected for track 15 at frame 550
+Occlusion detected for track 12 at frame 611
+Occlusion detected for track 2 at frame 616
+Occlusion detected for track 1 at frame 622
+Occlusion detected for track 4 at frame 875
+Occlusion detected for track 7 at frame 878
+Occlusion detected for track 18 at frame 879
+Occlusion detected for track 3 at frame 886
+Occlusion detected for track 10 at frame 908
+
+
+
+Tracking dancetrack0081...
+Occlusion detected for track 19 at frame 74
+Occlusion detected for track 4 at frame 82
+Occlusion detected for track 23 at frame 90
+Occlusion detected for track 25 at frame 147
+Occlusion detected for track 7 at frame 192
+Occlusion detected for track 24 at frame 201
+Occlusion detected for track 30 at frame 216
+Occlusion detected for track 4 at frame 217
+Occlusion detected for track 12 at frame 219
+Occlusion detected for track 2 at frame 254
+Occlusion detected for track 39 at frame 361
+Occlusion detected for track 36 at frame 369
+Occlusion detected for track 35 at frame 545
+Occlusion detected for track 14 at frame 548
+Occlusion detected for track 11 at frame 662
+Occlusion detected for track 25 at frame 696
+Occlusion detected for track 47 at frame 787
+Occlusion detected for track 40 at frame 798
+Occlusion detected for track 13 at frame 809
+Occlusion detected for track 1 at frame 910
+Occlusion detected for track 18 at frame 942
+
+
+
+Tracking dancetrack0090...
+Occlusion detected for track 16 at frame 158
+Occlusion detected for track 5 at frame 220
+Occlusion detected for track 1 at frame 263
+Occlusion detected for track 4 at frame 268
+Occlusion detected for track 19 at frame 843
+Occlusion detected for track 6 at frame 849
+Occlusion detected for track 12 at frame 863
+Occlusion detected for track 25 at frame 916
+
+
+
+Tracking dancetrack0094...
+Occlusion detected for track 1 at frame 74
+Occlusion detected for track 12 at frame 109
+Occlusion detected for track 15 at frame 139
+Occlusion detected for track 9 at frame 189
+Occlusion detected for track 10 at frame 191
+Occlusion detected for track 29 at frame 204
+Occlusion detected for track 30 at frame 248
+Occlusion detected for track 19 at frame 259
+Occlusion detected for track 25 at frame 270
+Occlusion detected for track 31 at frame 306
+Occlusion detected for track 32 at frame 315
+Occlusion detected for track 22 at frame 447
+Occlusion detected for track 15 at frame 478
+Occlusion detected for track 18 at frame 508
+Occlusion detected for track 26 at frame 513
+Occlusion detected for track 32 at frame 513
+Occlusion detected for track 22 at frame 545
+Occlusion detected for track 28 at frame 597
+Occlusion detected for track 12 at frame 597
+
+
+
+Tracking dancetrack0097...
+Running post-processing...
+Evaluating...
+59.651 62.771 90.042 45.260 78.952
+337.213405261691
+

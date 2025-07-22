@@ -63,7 +63,8 @@ class Track(BaseTrack):
 
         # Initialize 3
         self.alpha = 0.95
-        self.feat = detection[6:][np.newaxis, :].copy()
+        self.feat = detection[6:2054][np.newaxis, :].copy()
+        self.pose = detection[2055:]
 
     def update_features(self, feat, score):
         # Update and normalize
