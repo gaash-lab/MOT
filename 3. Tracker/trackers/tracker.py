@@ -6,42 +6,92 @@ from numpy import dot
 from numpy.linalg import norm
 import torch
 import torch.nn as nn
+import random
+import pickle
+import os
 
 
 class FeatureProjector(nn.Module):
+    def __init__(self, feat_dim=2048, pose_dim=34, fusion_dim=2048):
+        super().__init__()
+        
+        # Appearance projections
+        self.query_app = nn.Linear(feat_dim, fusion_dim)
+        self.key_app = nn.Linear(feat_dim, fusion_dim)
+        self.value_app = nn.Linear(feat_dim, fusion_dim)
+
+        # Pose projections
+        self.query_pose = nn.Linear(pose_dim, fusion_dim)
+        self.key_pose = nn.Linear(pose_dim, fusion_dim)
+        self.value_pose = nn.Linear(pose_dim, fusion_dim)
+
+        # LayerNorm
+        self.ln_app = nn.LayerNorm(fusion_dim)
+        self.ln_pose = nn.LayerNorm(fusion_dim)
+
+        # Fusion MLP: after concatenation
+        self.fusion_mlp = nn.Sequential(
+            nn.Linear(2 * fusion_dim, fusion_dim),
+            nn.ReLU(),
+            nn.Linear(fusion_dim, fusion_dim)
+        )
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, feat, pose, mode):
+        if isinstance(feat, np.ndarray):
+            feat = torch.from_numpy(feat).float().to(self.device)
+        if isinstance(pose, np.ndarray):
+            pose = torch.from_numpy(pose).float().to(self.device)
+
+        if mode == 'query':
+            app_proj = self.ln_app(self.query_app(feat))
+            pose_proj = self.ln_pose(self.query_pose(pose))
+        elif mode == 'key':
+            app_proj = self.ln_app(self.key_app(feat))
+            pose_proj = self.ln_pose(self.key_pose(pose))
+        elif mode == 'value':
+            app_proj = self.ln_app(self.value_app(feat))
+            pose_proj = self.ln_pose(self.value_pose(pose))
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+
+        # Concatenate and fuse
+        # app_proj = app_proj.squeeze()
+        # pose_proj = pose_proj.squeeze()
+        # print(f"app_proj shape: {app_proj.shape}, pose_proj shape: {pose_proj.shape}")
+        fused_input = torch.cat([app_proj, pose_proj], dim=-1)
+        fused_embedding = self.fusion_mlp(fused_input)
+
+        return fused_embedding
+
+
+
+class CrossAttentionMatcher(nn.Module):
     def __init__(self, feat_dim=2048, pose_dim=34):
         super().__init__()
-        self.query = nn.Linear(feat_dim, feat_dim)
-        self.key = nn.Linear(feat_dim, feat_dim)
-        self.value = nn.Linear(feat_dim, feat_dim)
-
-        self.pose_query = nn.Linear(pose_dim, feat_dim)  # Project pose to same dimension as appearance
-        self.pose_key = nn.Linear(pose_dim, feat_dim)
-        self.pose_value = nn.Linear(pose_dim, feat_dim)
-        
-        
-    def forward(self, feat, pose, mode):
-        if mode == 'query':
-            app_query = self.query(feat)
-            pose_query = self.pose_query(pose)
-            return app_query + pose_query  
-        elif mode == 'key':
-            app_key = self.key(feat)
-            pose_key = self.pose_key(pose)
-            return app_key + pose_key  
-        elif mode == 'value':
-            app_value = self.value(feat)
-            pose_value = self.pose_value(pose)
-            return app_value + pose_value  
-        return feat
-
-
-
-class CrossAttentionMatcher:
-    def __init__(self, feat_dim=2048):
-        self.projector = FeatureProjector(feat_dim)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.projector = FeatureProjector(feat_dim, pose_dim, feat_dim).to(self.device)
         self.scale = np.sqrt(feat_dim)
-        
+        self.triplet_loss = nn.TripletMarginLoss(margin=1.0).to(self.device)  #https://www.v7labs.com/blog/triplet-loss
+
+    def compute_loss(self, anchor, positive, negative):
+        q_anchor = self.projector(anchor["feat"], anchor["pose"], 'query')
+        k_pos = self.projector(positive["feat"], positive["pose"], 'key')
+        k_neg = self.projector(negative["feat"], negative["pose"], 'key')
+        return self.triplet_loss(q_anchor, k_pos, k_neg)
+
+    def process(self, vector):
+        if vector.dim() == 1: # Convert 1D to 2D
+            vector = vector.unsqueeze(0) 
+        elif vector.dim() > 2: # Convert higher dimensions to 2D
+            vector = vector.squeeze()  
+            if vector.dim() > 1: # Ensure it's 2D
+                vector = vector[0]  
+            vector = vector.unsqueeze(0)
+
+        return vector # Ensure it's 2D
+
+
     def compute_attention(self, query_feat, query_pose, memory_feats, memory_poses):
         """
         Handles all cases of input dimensions:
@@ -49,68 +99,47 @@ class CrossAttentionMatcher:
         - pose_vector: (34,)
         - memory_feats: list of (1, 2048), (2048,), or (N, 2048)
         """
-        # Convert query to proper 2D tensor (1, 2048)
-        q_tensor = torch.from_numpy(query_feat).float()
-        if q_tensor.dim() == 1:
-            q_tensor = q_tensor.unsqueeze(0)  # (2048,) -> (1, 2048)
-        elif q_tensor.dim() > 2:
-            q_tensor = q_tensor.squeeze()  # (1,1,2048) -> (2048,)
-            if q_tensor.dim() > 1:
-                q_tensor = q_tensor[0]  # Take first if still multi-dimensional
-            q_tensor = q_tensor.unsqueeze(0)
+        with torch.no_grad():  # Disable gradient calculation
+            # Convert query to proper 2D tensor (1, 2048)
+            q_tensor = torch.from_numpy(query_feat).float().to(self.device)
+            q_tensor = self.process(q_tensor)
 
-        q_pose = torch.from_numpy(query_pose).float()
-        if q_pose.dim() == 1:
-            q_pose = q_pose.unsqueeze(0)  
-        elif q_pose.dim() > 2:
-            q_pose = q_pose.squeeze()  
-            if q_pose.dim() > 1:
-                q_pose = q_pose[0]  
-            q_pose = q_pose.unsqueeze(0)
+            q_pose = torch.from_numpy(query_pose).float().to(self.device)
+            q_pose = self.process(q_pose)
 
-        # Handle empty memory bank
-        if len(memory_feats) == 0:
-            return np.zeros_like(q_tensor.squeeze(0).numpy()), np.zeros(0)
+            # Handle empty memory bank
+            if len(memory_feats) == 0:
+                return np.zeros_like(q_tensor.squeeze(0).numpy()), np.zeros(0)
+                
+            mem_tensors = []
+            mem_poses = []
+            for f, p in zip(memory_feats, memory_poses):
+                # Process appearance feature
+                ft = torch.from_numpy(f).float().to(self.device) if isinstance(f, np.ndarray) else f.float().to(self.device)
+                ft = self.process(ft)
+                mem_tensors.append(ft)
+                
+                # Process pose vector
+                pt = torch.from_numpy(p).float().to(self.device) if isinstance(p, np.ndarray) else p.float().to(self.device)
+                pt = self.process(pt)
+                mem_poses.append(pt)
             
-        mem_tensors = []
-        mem_poses = []
-        for f, p in zip(memory_feats, memory_poses):
-            # Process appearance feature
-            ft = torch.from_numpy(f).float() if isinstance(f, np.ndarray) else f.float()
-            if ft.dim() == 1:
-                ft = ft.unsqueeze(0)
-            elif ft.dim() > 2:
-                ft = ft.squeeze()
-                if ft.dim() > 1:
-                    ft = ft[0]
-                ft = ft.unsqueeze(0)
-            mem_tensors.append(ft)
             
-            # Process pose vector
-            pt = torch.from_numpy(p).float() if isinstance(p, np.ndarray) else p.float()
-            if pt.dim() == 1:
-                pt = pt.unsqueeze(0)
-            elif pt.dim() > 2:
-                pt = pt.squeeze()
-                if pt.dim() > 1:
-                    pt = pt[0]
-                pt = pt.unsqueeze(0)
-            mem_poses.append(pt)
-        
-        
-        k_tensor = torch.cat(mem_tensors, dim=0) 
-        k_pose = torch.cat(mem_poses, dim=0)
+            k_tensor = torch.cat(mem_tensors, dim=0) 
+            k_pose = torch.cat(mem_poses, dim=0)
 
-        q = self.projector(q_tensor, q_pose, 'query')  
-        k = self.projector(k_tensor, k_pose, 'key')    
-        v = self.projector(k_tensor, k_pose, 'value')  
+            q = self.projector(q_tensor, q_pose, 'query')  
+            k = self.projector(k_tensor, k_pose, 'key')    
+            v = self.projector(k_tensor, k_pose, 'value')  
 
-        # Compute attention scores
-        scores = torch.mm(q, k.t()) / self.scale  
-        attn = torch.softmax(scores, dim=-1)
-        attended = torch.mm(attn, v).squeeze(0)  
-        
-        return attended.detach().numpy(), attn.squeeze(0).detach().numpy()
+            # Compute attention scores
+            # print(f"q shape: {q.shape}, k shape: {k.shape}, v shape: {v.shape}")
+            scores = torch.mm(q, k.t()) / self.scale  
+            attn = torch.softmax(scores, dim=-1)
+            attended = torch.mm(attn, v).squeeze(0)  
+            
+            return attended.detach().cpu().numpy(), attn.squeeze(0).detach().cpu().numpy()
+
 
 
 def cosine_sim(a, b):
@@ -124,13 +153,97 @@ class Tracker(object):
         self.args = args
         self.max_time_lost = args.max_time_lost
         self.memory_bank = []  # Stores dicts with id, feat, area, hw
-        self.matcher = CrossAttentionMatcher(args.feat_dim, args.pose_dim)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.matcher = CrossAttentionMatcher(args.feat_dim, args.pose_dim).to(self.device)
+        if args.mode == "train_memory":
+            self.optimizer = torch.optim.Adam(self.matcher.parameters(), lr=1e-4) 
+        else:
+            self.load_checkpoint(args.checkpoint_path)
+            self.matcher.eval()  # Set to evaluation mode
+        self.train_pickle = args.train_pickle
+        self.epochs = args.num_epochs
+        self.hard_mining = args.hard_mining
 
         self.tracks = []
         self.frame_id = 0
         self.counter = TrackCounter()
 
-        self.cmc = CMC(vid_name)
+        if args.mode != "train_memory":
+            self.cmc = CMC(vid_name)
+
+    def load_checkpoint(self, checkpoint_path):
+        if not os.path.exists(checkpoint_path):
+            raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
+        
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
+        self.matcher.load_state_dict(checkpoint["model_state"])
+        print(f"Loaded checkpoint from {checkpoint_path}")
+
+
+    def train_memory_bank(self):
+        with open(self.train_pickle, "rb") as f:
+            features_dict = pickle.load(f)
+
+        best_loss = float('inf')
+
+        for epoch in range(self.epochs):
+            losses = []
+            for _ in range(1000):  # Sample random triplets
+                anchor, positive, negative = self.sample_triplet(features_dict)
+                loss = self.matcher.compute_loss(anchor, positive, negative)
+                
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                losses.append(loss.item())
+            mean_loss = np.mean(losses)
+            print(f"Epoch {epoch}: Loss = {mean_loss:.4f}") 
+
+            self.save_checkpoint(epoch, mean_loss)
+            if mean_loss < best_loss:
+                best_loss = mean_loss
+                self.save_checkpoint(epoch, mean_loss, best=True)
+
+    def sample_triplet(self, features_dict):
+        # 1. Randomly select one video
+        video = random.choice(list(features_dict.keys()))
+        all_frames = features_dict[video]
+
+        # 2. Flatten detections for this video only
+        detections = []
+        for frame_id, dets in all_frames.items():
+            for d in dets:
+                # print(f"det: {d}")
+                detections.append({
+                    "video": video,
+                    "frame": frame_id,
+                    "track_id": d["track_id"],
+                    "feat": d["embedding"],
+                    "pose": d["pose"]
+                })
+
+        # 3. Sample anchor, positive and negative
+        anchor = random.choice(detections)
+        same_id = [d for d in detections if d["track_id"] == anchor["track_id"] and d["frame"] != anchor["frame"]]
+        diff_id = [d for d in detections if d["track_id"] != anchor["track_id"]]
+
+        if not same_id or not diff_id:
+            raise ValueError("Insufficient positive/negative samples in video.")
+
+        positive = random.choice(same_id)
+        negative = random.choice(diff_id)
+
+        return anchor, positive, negative
+
+    def save_checkpoint(self, epoch, loss, best=False):
+        filename = os.path.join(self.args.output_memory, f"epoch_{epoch}_loss_{loss}.pth" if not best else f"memory_bank_best_loss_{loss}.pth")
+        torch.save({
+            "epoch": epoch,
+            "loss": loss,
+            "model_state": self.matcher.state_dict(),
+            "optimizer_state": self.optimizer.state_dict(),
+        }, filename)
+
 
     def match_with_memory(self, det):
         feature = det.feat
@@ -142,23 +255,26 @@ class Tracker(object):
         mem_features = [mem['feat'] for mem in self.memory_bank]
         mem_pose  = [mem['pose'] for mem in self.memory_bank]
 
-        attended_feat, attn_weights = self.matcher.compute_attention(feature, pose, mem_features, mem_pose)
+        with torch.no_grad():  # Disable gradient calculation
+            attended_feat, attn_weights = self.matcher.compute_attention(feature, pose, mem_features, mem_pose)
 
         best_idx = np.argmax(attn_weights)
         best_score = attn_weights[best_idx]
-        best_match = self.memory_bank[best_idx] if best_score > 0.50 else None
+        best_match = self.memory_bank[best_idx] if best_score > 0.70 else None
         if not best_match:
             return None
-        self.memory_bank.remove(best_match)
-        print(f"Reusing track ID {best_match['id']} with score {best_score:.2f}")
-        return best_match['id']
+        # self.memory_bank.remove(best_match)
+        # print(f"Reusing track ID {best_match['id']} with score {best_score:.2f}")
+        # return best_match['id']
         
         # Also verify with cosine similarity for robustness
-        # if best_match:
-        #     sim = cosine_sim(best_match['feat'], feature)
-        #     if sim > 0.70:
-        #         self.memory_bank.remove(best_match)
-        #         return best_match['id']
+        if best_match:
+            sim = cosine_sim(best_match['feat'], feature)
+            if sim > 0.60:
+                self.memory_bank.remove(best_match)
+                print(f"Reusing track ID {best_match['id']} with score {sim:.2f}")
+                return best_match['id']
+        return None
         
     def init_tracks(self, dets):
         tracks = [t for t in self.tracks if t.state in (TrackState.Tracked, TrackState.New)]

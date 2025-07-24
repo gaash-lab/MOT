@@ -16,9 +16,12 @@ def make_parser():
     # Basic
     parser.add_argument("--pickle_dir", type=str, default="/DATA/Tawheed/appended/")
     parser.add_argument("--output_dir", type=str, default="../outputs/3. track/")
+    parser.add_argument("--train_pickle", type=str, default="/DATA/Tawheed/track_files/dance_train_with_pose.pickle")
     parser.add_argument("--data_dir", type=str, default="/DATA/Tawheed/MOTDatasets/")
+    parser.add_argument("--checkpoint_path", type=str, default="/home/tawheed/MOT/TrackTrack/outputs/memory/memory_bank_best_loss_0.13229473876953124.pth")
+    parser.add_argument("--output_memory", type=str, default="../outputs/memory/")
     parser.add_argument("--dataset", type=str, default="MOT17")
-    parser.add_argument("--mode", type=str, default="val")
+    parser.add_argument("--mode", type=str, default="train_memory")
     parser.add_argument("--seed", type=float, default=10000)
 
     # For trackers
@@ -31,6 +34,8 @@ def make_parser():
     parser.add_argument("--tai_thr", type=float, default=0.55)
     parser.add_argument("--feat_dim", type=int, default=2048)
     parser.add_argument("--pose_dim", type=int, default=34)
+    parser.add_argument("--num_epochs", type=int, default=20)
+    parser.add_argument("--hard_mining", type=bool, default=True)
 
     return parser
 
@@ -92,55 +97,59 @@ def track(detections, detections_95, data_path, result_folder, mode):
 
 
 def run():
-    # Initialize AFLink
-    model = PostLinker()
-    model.load_state_dict(torch.load('./AFLink/AFLink_epoch20.pth'))
-    aflink_dataset = LinkData('', '')
+    if args.mode == "train_memory":
+        if args.mode == "train_memory":
+            tracker = Tracker(args, "")
+            tracker.train_memory_bank()
+    else:
+        model = PostLinker()
+        model.load_state_dict(torch.load('./AFLink/AFLink_epoch20.pth'))
+        aflink_dataset = LinkData('', '')
 
-    # Logging & Set proper parameters
-    print('Running %s %s...' % (args.dataset, args.mode))
-    set_parameters(args, args.dataset, args.mode)
+        # Logging & Set proper parameters
+        print('Running %s %s...' % (args.dataset, args.mode))
+        set_parameters(args, args.dataset, args.mode)
 
-    # Make result folder
-    trackers_to_eval = args.pickle_path.split('/')[-1].split('.pickle')[0]
-    result_folder = os.path.join(args.output_dir, trackers_to_eval)
-    os.makedirs(result_folder, exist_ok=True)
-    os.makedirs(result_folder + '_post/', exist_ok=True)
+        # Make result folder
+        trackers_to_eval = args.pickle_path.split('/')[-1].split('.pickle')[0]
+        result_folder = os.path.join(args.output_dir, trackers_to_eval)
+        os.makedirs(result_folder, exist_ok=True)
+        os.makedirs(result_folder + '_post/', exist_ok=True)
 
-    # Read detection result
-    with open(args.pickle_path, 'rb') as f:
-        detections = pickle.load(f)
-    with open(args.pickle_path_95, 'rb') as f:
-        detections_95 = pickle.load(f)
+        # Read detection result
+        with open(args.pickle_path, 'rb') as f:
+            detections = pickle.load(f)
+        with open(args.pickle_path_95, 'rb') as f:
+            detections_95 = pickle.load(f)
 
-    # Track
-    total_time, total_count = track(detections, detections_95, args.data_path, result_folder, args.mode)
+        # Track
+        total_time, total_count = track(detections, detections_95, args.data_path, result_folder, args.mode)
 
-    # Post-processing
-    print('Running post-processing...')
-    for result_file in os.listdir(result_folder):
-        # Set Path
-        path_in = result_folder + '/' + str(result_file)
-        path_out = result_folder + '_post/' + str(result_file)
+        # Post-processing
+        print('Running post-processing...')
+        for result_file in os.listdir(result_folder):
+            # Set Path
+            path_in = result_folder + '/' + str(result_file)
+            path_out = result_folder + '_post/' + str(result_file)
 
-        # Link
-        if 'Dance' in args.dataset:
-            linker = AFLink(path_in=path_in, path_out=path_out, model=model, dataset=aflink_dataset,
-                            thrT=(0, 20), thrS=100, thrP=0.05)
-            linker.link()
+            # Link
+            if 'Dance' in args.dataset:
+                linker = AFLink(path_in=path_in, path_out=path_out, model=model, dataset=aflink_dataset,
+                                thrT=(0, 20), thrS=100, thrP=0.05)
+                linker.link()
 
-        # Gaussian Interpolation
-        if 'MOT' in args.dataset:
-            gb_interpolation(path_in, path_out, interval=30, tau=12)
+            # Gaussian Interpolation
+            if 'MOT' in args.dataset:
+                gb_interpolation(path_in, path_out, interval=30, tau=12)
 
-    # Evaluation
-    if args.mode == 'val':
-        print('Evaluating...')
-        evaluate(args, trackers_to_eval + '_post', args.dataset)
+        # Evaluation
+        if args.mode == 'val':
+            print('Evaluating...')
+            evaluate(args, trackers_to_eval + '_post', args.dataset)
 
-    # Logging
-    print(total_count / total_time, flush=True)
-    print('', flush=True)
+        # Logging
+        print(total_count / total_time, flush=True)
+        print('', flush=True)
 
 
 if __name__ == "__main__":

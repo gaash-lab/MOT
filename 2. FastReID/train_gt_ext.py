@@ -14,8 +14,8 @@ def make_parser():
     # Data args
     parser.add_argument("--dataset", type=str, default="mot17")
     parser.add_argument("--data_path", type=str, default="/DATA/Tawheed/MOTDatasets/DanceTrack/train/")
-    parser.add_argument("--pickle_path", type=str, default="/home/tawheed/MOT/pickle_path/dance_train_0.95.pickle")
-    parser.add_argument("--output_path", type=str, default="/home/tawheed/MOT/pickle_path/features/dance_train_0.95.pickle")
+    parser.add_argument("--pickle_path", type=str, default="/home/tawheed/MOT/dance_train.pickle")
+    parser.add_argument("--output_path", type=str, default="/home/tawheed/MOT/dance_train_with_features.pickle")
     parser.add_argument("--config_path", type=str, default="/home/tawheed/MOT/TrackTrack/2. FastReID/configs/DanceTrack/sbs_S50.yml")
     parser.add_argument("--weight_path", type=str, default="/home/tawheed/MOT/TrackTrack/2. FastReID/weights/dance_sbs_S50.pth")
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     with open(args.pickle_path, 'rb') as f:
         detections = pickle.load(f)
 
-    
+
     for vid_name in detections.keys():
         for frame_id in detections[vid_name].keys():
             # If there is no detection
@@ -50,17 +50,18 @@ if __name__ == "__main__":
 
             img = cv2.imread(img_path)
             
-            # Get detection
-            detection = detections[vid_name][frame_id]
+            for obj in detections[vid_name][frame_id]:
 
-            # Get features
-            if detection is not None:
-                detection = np.array(detection)
-                embedding = embedder.compute_embedding(img, detection[:, :4])
-                detections[vid_name][frame_id] = np.concatenate([detection, embedding], axis=1)
+                # Get features
+                if obj is not None:
+                    detection = np.array(obj["bbox"]).reshape(1, -1) # shape (1, 5)
+                    embedding = embedder.compute_embedding(img, detection[:, :4])
+                    obj.update({
+                        "embedding": embedding
+                    })
 
-            # Logging
-            print(vid_name, frame_id, flush=True)
+                # Logging
+                print(vid_name, frame_id, flush=True)
 
     # Save
     with open(args.output_path, 'wb') as handle:
