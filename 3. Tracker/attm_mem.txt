@@ -1,0 +1,481 @@
+det_del_high involved
+
+
+Running DanceTrack val...
+
+
+
+Tracking dancetrack0004...
+/home/tawheed/MOT/TrackTrack/3. Tracker/trackers/utils.py:242: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at ../torch/csrc/utils/tensor_new.cpp:230.)
+  torch.tensor([d.x1y1x2y2 for d in dets], dtype=torch.float32)).numpy()
+Reusing track ID 7 at frame 797 with score 0.60
+
+
+
+Tracking dancetrack0005...
+Reusing track ID 3 at frame 1051 with score 0.61
+
+
+
+Tracking dancetrack0007...
+Reusing track ID 2 at frame 730 with score 0.90
+
+
+
+Tracking dancetrack0010...
+Reusing track ID 3 at frame 295 with score 0.72
+Reusing track ID 6 at frame 700 with score 0.87
+Reusing track ID 4 at frame 1149 with score 0.71
+
+
+
+Tracking dancetrack0014...
+Reusing track ID 7 at frame 175 with score 0.96
+Reusing track ID 8 at frame 237 with score 0.78
+Reusing track ID 4 at frame 491 with score 0.66
+Reusing track ID 2 at frame 639 with score 0.69
+Reusing track ID 3 at frame 746 with score 0.72
+Reusing track ID 14 at frame 898 with score 0.74
+Reusing track ID 9 at frame 1019 with score 0.87
+
+
+
+Tracking dancetrack0018...
+
+
+
+Tracking dancetrack0019...
+Reusing track ID 2 at frame 834 with score 0.77
+Reusing track ID 7 at frame 1686 with score 0.86
+Reusing track ID 1 at frame 1759 with score 0.88
+Reusing track ID 4 at frame 1876 with score 0.83
+Reusing track ID 22 at frame 1890 with score 0.61
+Reusing track ID 18 at frame 2271 with score 0.84
+
+
+
+Tracking dancetrack0025...
+Reusing track ID 9 at frame 63 with score 0.63
+Reusing track ID 2 at frame 189 with score 0.78
+Reusing track ID 5 at frame 610 with score 0.84
+Reusing track ID 19 at frame 616 with score 0.68
+Reusing track ID 6 at frame 677 with score 0.85
+Reusing track ID 24 at frame 696 with score 0.93
+Reusing track ID 25 at frame 777 with score 0.89
+Reusing track ID 24 at frame 795 with score 0.69
+
+
+
+Tracking dancetrack0026...
+Reusing track ID 13 at frame 117 with score 0.68
+Reusing track ID 12 at frame 147 with score 0.77
+
+
+
+Tracking dancetrack0030...
+
+
+
+Tracking dancetrack0034...
+Reusing track ID 9 at frame 82 with score 0.71
+Reusing track ID 17 at frame 140 with score 0.76
+Reusing track ID 7 at frame 292 with score 0.78
+Reusing track ID 2 at frame 355 with score 0.93
+Reusing track ID 13 at frame 360 with score 0.76
+Reusing track ID 3 at frame 487 with score 0.70
+Reusing track ID 28 at frame 528 with score 0.91
+Reusing track ID 28 at frame 633 with score 0.91
+Reusing track ID 13 at frame 654 with score 0.79
+Reusing track ID 1 at frame 763 with score 0.71
+Reusing track ID 8 at frame 876 with score 0.86
+Reusing track ID 25 at frame 899 with score 0.74
+
+
+
+Tracking dancetrack0035...
+Reusing track ID 5 at frame 370 with score 0.68
+Reusing track ID 11 at frame 579 with score 0.67
+
+
+
+Tracking dancetrack0041...
+Reusing track ID 15 at frame 196 with score 0.80
+Reusing track ID 1 at frame 219 with score 0.77
+Reusing track ID 6 at frame 349 with score 0.78
+Reusing track ID 5 at frame 406 with score 0.88
+Reusing track ID 3 at frame 425 with score 0.65
+Reusing track ID 34 at frame 523 with score 0.85
+Reusing track ID 17 at frame 752 with score 0.64
+Reusing track ID 30 at frame 758 with score 0.64
+Reusing track ID 14 at frame 871 with score 0.92
+Reusing track ID 31 at frame 891 with score 0.94
+Reusing track ID 17 at frame 894 with score 0.82
+Reusing track ID 11 at frame 913 with score 0.75
+Reusing track ID 6 at frame 939 with score 0.72
+Reusing track ID 17 at frame 978 with score 0.73
+
+
+
+Tracking dancetrack0043...
+
+
+
+Tracking dancetrack0047...
+Reusing track ID 8 at frame 540 with score 0.82
+Reusing track ID 8 at frame 742 with score 0.71
+Reusing track ID 7 at frame 1037 with score 0.80
+
+
+
+Tracking dancetrack0058...
+Reusing track ID 3 at frame 1248 with score 0.66
+
+
+
+Tracking dancetrack0063...
+Reusing track ID 9 at frame 164 with score 0.95
+Reusing track ID 36 at frame 251 with score 0.91
+Reusing track ID 62 at frame 320 with score 0.92
+Reusing track ID 67 at frame 344 with score 0.62
+Reusing track ID 89 at frame 426 with score 0.71
+Reusing track ID 1 at frame 430 with score 0.79
+Reusing track ID 2 at frame 446 with score 0.65
+Reusing track ID 71 at frame 477 with score 0.64
+Reusing track ID 87 at frame 493 with score 0.65
+Reusing track ID 4 at frame 513 with score 0.73
+Reusing track ID 87 at frame 544 with score 0.67
+Reusing track ID 24 at frame 702 with score 0.91
+Reusing track ID 85 at frame 717 with score 0.63
+Reusing track ID 60 at frame 744 with score 0.83
+Reusing track ID 113 at frame 754 with score 0.76
+Reusing track ID 136 at frame 912 with score 0.74
+Reusing track ID 24 at frame 956 with score 0.69
+Reusing track ID 139 at frame 959 with score 0.95
+Reusing track ID 135 at frame 995 with score 0.83
+
+
+
+Tracking dancetrack0065...
+
+
+
+Tracking dancetrack0073...
+Reusing track ID 10 at frame 174 with score 0.81
+Reusing track ID 7 at frame 223 with score 0.80
+Reusing track ID 15 at frame 313 with score 0.83
+Reusing track ID 16 at frame 316 with score 0.88
+Reusing track ID 1 at frame 363 with score 0.67
+Reusing track ID 1 at frame 532 with score 0.93
+Reusing track ID 7 at frame 561 with score 0.80
+Reusing track ID 11 at frame 695 with score 0.67
+
+
+
+Tracking dancetrack0077...
+Reusing track ID 2 at frame 536 with score 0.92
+
+
+
+Tracking dancetrack0079...
+Reusing track ID 8 at frame 387 with score 0.88
+Reusing track ID 8 at frame 535 with score 0.84
+
+
+
+Tracking dancetrack0081...
+Reusing track ID 4 at frame 176 with score 0.66
+Reusing track ID 25 at frame 186 with score 0.92
+Reusing track ID 23 at frame 199 with score 0.86
+Reusing track ID 19 at frame 200 with score 0.66
+Reusing track ID 7 at frame 312 with score 0.85
+Reusing track ID 2 at frame 497 with score 0.75
+Reusing track ID 32 at frame 514 with score 0.69
+Reusing track ID 37 at frame 517 with score 0.69
+Reusing track ID 12 at frame 531 with score 0.73
+Reusing track ID 11 at frame 879 with score 0.84
+Reusing track ID 13 at frame 913 with score 0.77
+Reusing track ID 1 at frame 920 with score 0.90
+Reusing track ID 32 at frame 973 with score 0.75
+
+
+
+Tracking dancetrack0090...
+Reusing track ID 16 at frame 160 with score 0.91
+Reusing track ID 5 at frame 251 with score 0.75
+Reusing track ID 1 at frame 785 with score 0.80
+Reusing track ID 4 at frame 823 with score 0.73
+
+
+
+Tracking dancetrack0094...
+Reusing track ID 1 at frame 85 with score 0.85
+Reusing track ID 12 at frame 115 with score 0.90
+Reusing track ID 15 at frame 174 with score 0.87
+Reusing track ID 10 at frame 194 with score 0.79
+Reusing track ID 9 at frame 196 with score 0.67
+Reusing track ID 29 at frame 205 with score 0.77
+Reusing track ID 19 at frame 284 with score 0.88
+Reusing track ID 31 at frame 373 with score 0.63
+Reusing track ID 25 at frame 379 with score 0.64
+Reusing track ID 30 at frame 424 with score 0.89
+Reusing track ID 32 at frame 430 with score 0.73
+Reusing track ID 22 at frame 498 with score 0.84
+Reusing track ID 15 at frame 507 with score 0.77
+Reusing track ID 30 at frame 519 with score 0.63
+Reusing track ID 26 at frame 529 with score 0.67
+Reusing track ID 18 at frame 547 with score 0.81
+Reusing track ID 22 at frame 587 with score 0.63
+
+
+
+Tracking dancetrack0097...
+Running post-processing...
+Evaluating...
+59.740 63.091 90.044 45.425 78.899
+305.272319979898
+
+
+
+
+det_del_high not involved
+
+
+Running DanceTrack val...
+
+
+
+Tracking dancetrack0004...
+/home/tawheed/MOT/TrackTrack/3. Tracker/trackers/utils.py:242: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at ../torch/csrc/utils/tensor_new.cpp:230.)
+  torch.tensor([d.x1y1x2y2 for d in dets], dtype=torch.float32)).numpy()
+Reusing track ID 3 at frame 797 with score 0.87
+
+
+
+Tracking dancetrack0005...
+Reusing track ID 3 at frame 1051 with score 0.61
+
+
+
+Tracking dancetrack0007...
+Reusing track ID 2 at frame 730 with score 0.91
+
+
+
+Tracking dancetrack0010...
+Reusing track ID 3 at frame 295 with score 0.72
+Reusing track ID 6 at frame 700 with score 0.87
+Reusing track ID 4 at frame 1149 with score 0.71
+
+
+
+Tracking dancetrack0014...
+Reusing track ID 7 at frame 175 with score 0.96
+Reusing track ID 8 at frame 237 with score 0.78
+Reusing track ID 4 at frame 491 with score 0.66
+Reusing track ID 2 at frame 613 with score 0.82
+Reusing track ID 5 at frame 746 with score 0.74
+Reusing track ID 13 at frame 888 with score 0.82
+Reusing track ID 8 at frame 894 with score 0.74
+Reusing track ID 6 at frame 895 with score 0.74
+Reusing track ID 17 at frame 911 with score 0.70
+Reusing track ID 9 at frame 1019 with score 0.77
+
+
+
+Tracking dancetrack0018...
+
+
+
+Tracking dancetrack0019...
+Reusing track ID 1 at frame 834 with score 0.77
+Reusing track ID 7 at frame 1686 with score 0.84
+Reusing track ID 2 at frame 1759 with score 0.88
+Reusing track ID 4 at frame 1876 with score 0.83
+Reusing track ID 22 at frame 1890 with score 0.61
+Reusing track ID 18 at frame 2271 with score 0.85
+
+
+
+Tracking dancetrack0025...
+Reusing track ID 9 at frame 63 with score 0.63
+Reusing track ID 4 at frame 189 with score 0.77
+Reusing track ID 7 at frame 610 with score 0.84
+Reusing track ID 19 at frame 616 with score 0.68
+Reusing track ID 3 at frame 677 with score 0.85
+Reusing track ID 23 at frame 696 with score 0.93
+Reusing track ID 24 at frame 777 with score 0.89
+Reusing track ID 23 at frame 795 with score 0.69
+
+
+
+Tracking dancetrack0026...
+Reusing track ID 13 at frame 117 with score 0.68
+Reusing track ID 12 at frame 147 with score 0.77
+
+
+
+Tracking dancetrack0030...
+
+
+
+Tracking dancetrack0034...
+Reusing track ID 9 at frame 82 with score 0.71
+Reusing track ID 17 at frame 140 with score 0.76
+Reusing track ID 7 at frame 292 with score 0.78
+Reusing track ID 11 at frame 355 with score 0.94
+Reusing track ID 2 at frame 360 with score 0.83
+Reusing track ID 13 at frame 377 with score 0.85
+Reusing track ID 5 at frame 444 with score 0.88
+Reusing track ID 3 at frame 487 with score 0.70
+Reusing track ID 13 at frame 528 with score 0.91
+Reusing track ID 13 at frame 633 with score 0.91
+Reusing track ID 2 at frame 654 with score 0.79
+Reusing track ID 15 at frame 767 with score 0.75
+Reusing track ID 8 at frame 876 with score 0.86
+Reusing track ID 4 at frame 899 with score 0.79
+
+
+
+Tracking dancetrack0035...
+Reusing track ID 11 at frame 579 with score 0.67
+
+
+
+Tracking dancetrack0041...
+Reusing track ID 15 at frame 196 with score 0.80
+Reusing track ID 1 at frame 219 with score 0.77
+Reusing track ID 6 at frame 349 with score 0.78
+Reusing track ID 5 at frame 406 with score 0.88
+Reusing track ID 3 at frame 425 with score 0.65
+Reusing track ID 31 at frame 523 with score 0.85
+Reusing track ID 28 at frame 758 with score 0.64
+Reusing track ID 14 at frame 830 with score 0.78
+Reusing track ID 17 at frame 871 with score 0.88
+Reusing track ID 39 at frame 891 with score 0.63
+Reusing track ID 15 at frame 913 with score 0.91
+Reusing track ID 8 at frame 913 with score 0.87
+Reusing track ID 6 at frame 939 with score 0.72
+Reusing track ID 40 at frame 978 with score 0.73
+
+
+
+Tracking dancetrack0043...
+
+
+
+Tracking dancetrack0047...
+Reusing track ID 5 at frame 540 with score 0.87
+Reusing track ID 5 at frame 742 with score 0.71
+Reusing track ID 7 at frame 1037 with score 0.80
+
+
+
+Tracking dancetrack0058...
+Reusing track ID 3 at frame 1248 with score 0.65
+
+
+
+Tracking dancetrack0063...
+Reusing track ID 1 at frame 320 with score 0.69
+Reusing track ID 61 at frame 320 with score 0.82
+Reusing track ID 65 at frame 334 with score 0.63
+Reusing track ID 59 at frame 343 with score 0.69
+Reusing track ID 88 at frame 426 with score 0.71
+Reusing track ID 86 at frame 428 with score 0.82
+Reusing track ID 2 at frame 430 with score 0.72
+Reusing track ID 71 at frame 446 with score 0.71
+Reusing track ID 70 at frame 477 with score 0.67
+Reusing track ID 5 at frame 513 with score 0.73
+Reusing track ID 99 at frame 544 with score 0.67
+Reusing track ID 112 at frame 627 with score 0.64
+Reusing track ID 6 at frame 717 with score 0.91
+Reusing track ID 24 at frame 741 with score 0.74
+Reusing track ID 138 at frame 912 with score 0.74
+Reusing track ID 9 at frame 956 with score 0.69
+Reusing track ID 141 at frame 959 with score 0.95
+Reusing track ID 137 at frame 995 with score 0.83
+
+
+
+Tracking dancetrack0065...
+
+
+
+Tracking dancetrack0073...
+Reusing track ID 7 at frame 223 with score 0.80
+Reusing track ID 4 at frame 252 with score 0.84
+Reusing track ID 13 at frame 313 with score 0.86
+Reusing track ID 23 at frame 532 with score 0.93
+Reusing track ID 6 at frame 561 with score 0.80
+Reusing track ID 4 at frame 629 with score 0.88
+Reusing track ID 8 at frame 632 with score 0.86
+
+
+
+Tracking dancetrack0077...
+Reusing track ID 2 at frame 536 with score 0.92
+
+
+
+Tracking dancetrack0079...
+Reusing track ID 8 at frame 387 with score 0.88
+Reusing track ID 8 at frame 535 with score 0.83
+
+
+
+Tracking dancetrack0081...
+Reusing track ID 19 at frame 106 with score 0.71
+Reusing track ID 15 at frame 164 with score 0.73
+Reusing track ID 25 at frame 167 with score 0.64
+Reusing track ID 4 at frame 176 with score 0.66
+Reusing track ID 13 at frame 186 with score 0.95
+Reusing track ID 23 at frame 199 with score 0.86
+Reusing track ID 2 at frame 497 with score 0.75
+Reusing track ID 30 at frame 514 with score 0.69
+Reusing track ID 36 at frame 517 with score 0.69
+Reusing track ID 19 at frame 531 with score 0.69
+Reusing track ID 11 at frame 879 with score 0.84
+Reusing track ID 12 at frame 900 with score 0.88
+Reusing track ID 1 at frame 913 with score 0.76
+Reusing track ID 35 at frame 920 with score 0.65
+Reusing track ID 50 at frame 973 with score 0.69
+
+
+
+Tracking dancetrack0090...
+Reusing track ID 12 at frame 82 with score 0.75
+Reusing track ID 18 at frame 159 with score 0.77
+Reusing track ID 7 at frame 251 with score 0.72
+Reusing track ID 1 at frame 780 with score 0.66
+Reusing track ID 5 at frame 823 with score 0.75
+Reusing track ID 4 at frame 869 with score 0.80
+Reusing track ID 6 at frame 869 with score 0.70
+
+
+
+Tracking dancetrack0094...
+Reusing track ID 1 at frame 85 with score 0.85
+Reusing track ID 12 at frame 114 with score 0.63
+Reusing track ID 15 at frame 174 with score 0.87
+Reusing track ID 25 at frame 180 with score 0.86
+Reusing track ID 13 at frame 194 with score 0.80
+Reusing track ID 12 at frame 205 with score 0.87
+Reusing track ID 22 at frame 225 with score 0.87
+Reusing track ID 9 at frame 284 with score 0.83
+Reusing track ID 18 at frame 290 with score 0.80
+Reusing track ID 25 at frame 379 with score 0.75
+Reusing track ID 30 at frame 386 with score 0.94
+Reusing track ID 29 at frame 401 with score 0.82
+Reusing track ID 28 at frame 498 with score 0.84
+Reusing track ID 14 at frame 507 with score 0.65
+Reusing track ID 38 at frame 519 with score 0.63
+Reusing track ID 26 at frame 529 with score 0.68
+Reusing track ID 28 at frame 587 with score 0.63
+
+
+
+Tracking dancetrack0097...
+Running post-processing...
+Evaluating...
+60.158 64.093 90.146 46.204 78.663
+303.6225738497262

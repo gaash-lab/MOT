@@ -12,12 +12,12 @@ def make_parser():
     parser = argparse.ArgumentParser("Track")
 
     # Data args
-    parser.add_argument("--dataset", type=str, default="mot17")
-    parser.add_argument("--data_path", type=str, default="/DATA/Tawheed/MOTDatasets/DanceTrack/train/")
-    parser.add_argument("--pickle_path", type=str, default="/home/tawheed/MOT/pickle_path/dance_train_0.95.pickle")
-    parser.add_argument("--output_path", type=str, default="/home/tawheed/MOT/pickle_path/features/dance_train_0.95.pickle")
-    parser.add_argument("--config_path", type=str, default="/home/tawheed/MOT/TrackTrack/2. FastReID/configs/DanceTrack/sbs_S50.yml")
-    parser.add_argument("--weight_path", type=str, default="/home/tawheed/MOT/TrackTrack/2. FastReID/weights/dance_sbs_S50.pth")
+    parser.add_argument("--dataset", type=str, default="mot17_half")
+    parser.add_argument("--data_path", type=str, default="/DATA/Tawheed/MOTDatasets/mot17_half/train/")
+    parser.add_argument("--pickle_path", type=str, default="/home/tawheed/MOT/mot17_half_train.pickle")
+    parser.add_argument("--output_path", type=str, default="/DATA/Tawheed/track_files/pickle_path/features/mot17_half_train.pickle")
+    parser.add_argument("--config_path", type=str, default="configs/MOT17_half/sbs_S50.yml")
+    parser.add_argument("--weight_path", type=str, default="weights/mot17_half_sbs_S50.pth")
 
     # Else
     parser.add_argument("--seed", type=float, default=10000)

@@ -9,6 +9,8 @@ import torch.nn as nn
 import random
 import pickle
 import os
+from tqdm import tqdm
+
 
 
 class FeatureProjector(nn.Module):
@@ -20,16 +22,13 @@ class FeatureProjector(nn.Module):
         self.key_app = nn.Linear(feat_dim, fusion_dim)
         self.value_app = nn.Linear(feat_dim, fusion_dim)
 
-        # Pose projections
         self.query_pose = nn.Linear(pose_dim, fusion_dim)
         self.key_pose = nn.Linear(pose_dim, fusion_dim)
         self.value_pose = nn.Linear(pose_dim, fusion_dim)
 
-        # LayerNorm
         self.ln_app = nn.LayerNorm(fusion_dim)
         self.ln_pose = nn.LayerNorm(fusion_dim)
 
-        # Fusion MLP: after concatenation
         self.fusion_mlp = nn.Sequential(
             nn.Linear(2 * fusion_dim, fusion_dim),
             nn.ReLU(),
@@ -55,10 +54,8 @@ class FeatureProjector(nn.Module):
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
-        # Concatenate and fuse
-        # app_proj = app_proj.squeeze()
-        # pose_proj = pose_proj.squeeze()
-        # print(f"app_proj shape: {app_proj.shape}, pose_proj shape: {pose_proj.shape}")
+        app_proj = app_proj.squeeze()
+        pose_proj = pose_proj.squeeze()
         fused_input = torch.cat([app_proj, pose_proj], dim=-1)
         fused_embedding = self.fusion_mlp(fused_input)
 
@@ -99,46 +96,50 @@ class CrossAttentionMatcher(nn.Module):
         - pose_vector: (34,)
         - memory_feats: list of (1, 2048), (2048,), or (N, 2048)
         """
-        with torch.no_grad():  # Disable gradient calculation
+        # with torch.no_grad():  # Disable gradient calculation
             # Convert query to proper 2D tensor (1, 2048)
-            q_tensor = torch.from_numpy(query_feat).float().to(self.device)
-            q_tensor = self.process(q_tensor)
+        q_tensor = torch.from_numpy(query_feat).float().to(self.device)
+        q_tensor = self.process(q_tensor)
 
-            q_pose = torch.from_numpy(query_pose).float().to(self.device)
-            q_pose = self.process(q_pose)
+        q_pose = torch.from_numpy(query_pose).float().to(self.device)
+        q_pose = self.process(q_pose)
 
-            # Handle empty memory bank
-            if len(memory_feats) == 0:
-                return np.zeros_like(q_tensor.squeeze(0).numpy()), np.zeros(0)
-                
-            mem_tensors = []
-            mem_poses = []
-            for f, p in zip(memory_feats, memory_poses):
-                # Process appearance feature
-                ft = torch.from_numpy(f).float().to(self.device) if isinstance(f, np.ndarray) else f.float().to(self.device)
-                ft = self.process(ft)
-                mem_tensors.append(ft)
-                
-                # Process pose vector
-                pt = torch.from_numpy(p).float().to(self.device) if isinstance(p, np.ndarray) else p.float().to(self.device)
-                pt = self.process(pt)
-                mem_poses.append(pt)
+        # Handle empty memory bank
+        if len(memory_feats) == 0:
+            return np.zeros_like(q_tensor.squeeze(0).numpy()), np.zeros(0)
             
+        mem_tensors = []
+        mem_poses = []
+        for f, p in zip(memory_feats, memory_poses):
+            # Process appearance feature
+            ft = torch.from_numpy(f).float().to(self.device) if isinstance(f, np.ndarray) else f.float().to(self.device)
+            ft = self.process(ft)
+            mem_tensors.append(ft)
             
-            k_tensor = torch.cat(mem_tensors, dim=0) 
-            k_pose = torch.cat(mem_poses, dim=0)
+            # Process pose vector
+            pt = torch.from_numpy(p).float().to(self.device) if isinstance(p, np.ndarray) else p.float().to(self.device)
+            pt = self.process(pt)
+            mem_poses.append(pt)
+        
+        
+        k_tensor = torch.cat(mem_tensors, dim=0) 
+        k_pose = torch.cat(mem_poses, dim=0)
 
-            q = self.projector(q_tensor, q_pose, 'query')  
-            k = self.projector(k_tensor, k_pose, 'key')    
-            v = self.projector(k_tensor, k_pose, 'value')  
+        q = self.projector(q_tensor, q_pose, 'query')  
+        k = self.projector(k_tensor, k_pose, 'key')    
+        v = self.projector(k_tensor, k_pose, 'value')  
 
-            # Compute attention scores
-            # print(f"q shape: {q.shape}, k shape: {k.shape}, v shape: {v.shape}")
-            scores = torch.mm(q, k.t()) / self.scale  
-            attn = torch.softmax(scores, dim=-1)
-            attended = torch.mm(attn, v).squeeze(0)  
-            
-            return attended.detach().cpu().numpy(), attn.squeeze(0).detach().cpu().numpy()
+        if q.dim() == 1:
+            q = q.unsqueeze(0)
+        if k.dim() == 1:
+            k = k.unsqueeze(0)
+        if v.dim() == 1:
+            v = v.unsqueeze(0)
+        scores = torch.mm(q, k.t()) / self.scale  
+        attn = torch.softmax(scores, dim=-1)
+        attended = torch.mm(attn, v).squeeze(0)  
+        
+        return attended.detach().cpu().numpy(), attn.squeeze(0).detach().cpu().numpy()
 
 
 
@@ -177,7 +178,6 @@ class Tracker(object):
         
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.matcher.load_state_dict(checkpoint["model_state"])
-        print(f"Loaded checkpoint from {checkpoint_path}")
 
 
     def train_memory_bank(self):
@@ -185,19 +185,68 @@ class Tracker(object):
             features_dict = pickle.load(f)
 
         best_loss = float('inf')
+        batch_size = 32  
 
         for epoch in range(self.epochs):
             losses = []
-            for _ in range(1000):  # Sample random triplets
-                anchor, positive, negative = self.sample_triplet(features_dict)
-                loss = self.matcher.compute_loss(anchor, positive, negative)
-                
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
-                losses.append(loss.item())
+
+            for _ in tqdm(range(100), desc=f"Epoch {epoch}"):  
+                video = random.choice(list(features_dict.keys()))
+                all_frames = features_dict[video]
+
+                detections = []
+                for frame_id, dets in all_frames.items():
+                    for d in dets:
+                        detections.append({
+                            "video": video,
+                            "frame": frame_id,
+                            "track_id": d["track_id"],
+                            "feat": d["embedding"],
+                            "pose": d["pose"]
+                        })
+
+
+                batch_anchors = random.sample(detections, min(batch_size, len(detections)))
+
+                for anchor in batch_anchors:
+                    positives = [d for d in detections if d["track_id"] == anchor["track_id"] and d["frame"] != anchor["frame"]]
+                    negatives = [d for d in detections if d["track_id"] != anchor["track_id"]]
+
+                    if not positives or not negatives:
+                        continue  # skip this anchor if we can't sample properly
+
+                    positive = random.choice(positives)
+
+                    anchor_emb = self.matcher.projector(
+                        torch.from_numpy(np.array(anchor["feat"])).unsqueeze(0).to(self.device).float(),
+                        torch.from_numpy(np.array(anchor["pose"])).unsqueeze(0).to(self.device).float(),
+                        mode='query'
+                    ).detach()
+
+                    neg_feats = np.stack([neg["feat"] for neg in negatives])  
+                    neg_poses = np.stack([neg["pose"] for neg in negatives]) 
+
+                    neg_feats_tensor = torch.from_numpy(neg_feats).float().to(self.device)
+                    neg_poses_tensor = torch.from_numpy(neg_poses).float().to(self.device)
+
+                    neg_embs = self.matcher.projector(neg_feats_tensor, neg_poses_tensor, mode='key').detach()  
+
+                    if anchor_emb.dim() == 1:
+                        anchor_emb = anchor_emb.unsqueeze(0)
+
+                    sims = torch.nn.functional.cosine_similarity(anchor_emb, neg_embs, dim=-1)
+
+                    hardest_idx = torch.argmax(sims).item()
+                    hardest_negative = negatives[hardest_idx]
+
+                    loss = self.matcher.compute_loss(anchor, positive, hardest_negative)
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
+                    losses.append(loss.item())
+
             mean_loss = np.mean(losses)
-            print(f"Epoch {epoch}: Loss = {mean_loss:.4f}") 
+            print(f"[Epoch {epoch}] Loss: {mean_loss:.4f}")
 
             self.save_checkpoint(epoch, mean_loss)
             if mean_loss < best_loss:
@@ -205,15 +254,12 @@ class Tracker(object):
                 self.save_checkpoint(epoch, mean_loss, best=True)
 
     def sample_triplet(self, features_dict):
-        # 1. Randomly select one video
         video = random.choice(list(features_dict.keys()))
         all_frames = features_dict[video]
 
-        # 2. Flatten detections for this video only
         detections = []
         for frame_id, dets in all_frames.items():
             for d in dets:
-                # print(f"det: {d}")
                 detections.append({
                     "video": video,
                     "frame": frame_id,
@@ -222,7 +268,6 @@ class Tracker(object):
                     "pose": d["pose"]
                 })
 
-        # 3. Sample anchor, positive and negative
         anchor = random.choice(detections)
         same_id = [d for d in detections if d["track_id"] == anchor["track_id"] and d["frame"] != anchor["frame"]]
         diff_id = [d for d in detections if d["track_id"] != anchor["track_id"]]
@@ -272,7 +317,7 @@ class Tracker(object):
             sim = cosine_sim(best_match['feat'], feature)
             if sim > 0.60:
                 self.memory_bank.remove(best_match)
-                print(f"Reusing track ID {best_match['id']} with score {sim:.2f}")
+                print(f"Reusing track ID {best_match['id']} at frame {self.frame_id} with score {sim:.2f}")
                 return best_match['id']
         return None
         

@@ -1,6 +1,7 @@
 import lap
 import numpy as np
 from cython_bbox import bbox_overlaps
+import torch
 
 
 def find_deleted_detections(dets, dets_95):
@@ -16,6 +17,14 @@ def find_deleted_detections(dets, dets_95):
 
     return dets_del
 
+def add_buffer(boxes, buffer=5):
+    # boxes: [N, 4] in (x1, y1, x2, y2)
+    boxes_buf = boxes.copy()
+    boxes_buf[:, 0] += buffer  # x1
+    boxes_buf[:, 1] += buffer  # y1
+    boxes_buf[:, 2] += buffer  # x2
+    boxes_buf[:, 3] += buffer  # y2
+    return boxes_buf
 
 def iou_distance(a_tracks, b_tracks):
     # Get boxes
@@ -32,6 +41,9 @@ def iou_distance(a_tracks, b_tracks):
         h_iou /= (np.maximum(a_boxes[:, 3:4], b_boxes[:, 3:4].T) - np.minimum(a_boxes[:, 1:2], b_boxes[:, 1:2].T))
 
         # Calculate HMIoU
+        # a_boxes_buf = add_buffer(a_boxes, buffer=20)
+        # b_boxes_buf = add_buffer(b_boxes, buffer=20)
+        # iou_sim = bbox_overlaps(a_boxes_buf, b_boxes_buf)
         iou_sim = bbox_overlaps(a_boxes, b_boxes)
         iou_dist = 1 - h_iou * iou_sim
 
@@ -50,6 +62,24 @@ def cos_distance(tracks, dets):
 
     return cos_dist
 
+def cos_pose(tracks, dets):
+    # Handle empty case
+    if len(tracks) == 0 or len(dets) == 0:
+        return np.ones((len(tracks), len(dets)), dtype=np.float64)
+
+    # Stack pose vectors
+    if len(tracks) == 0 or len(dets) == 0:
+        return np.ones((len(tracks), len(dets)), dtype=np.float64)
+
+    t_feat = np.stack([t.pose for t in tracks], axis=0)  # shape: [N_tracks, pose_dim]
+    d_feat = np.stack([d.pose for d in dets], axis=0)    # shape: [N_dets, pose_dim]
+
+    t_feat_norm = t_feat / np.linalg.norm(t_feat, axis=1, keepdims=True)
+    d_feat_norm = d_feat / np.linalg.norm(d_feat, axis=1, keepdims=True)
+
+    # Compute cosine distance
+    cos_dist = np.clip(1 - np.dot(t_feat_norm, d_feat_norm.T), a_min=0., a_max=1.)
+    return cos_dist
 
 def conf_distance(tracks, dets):
     # Check
@@ -175,18 +205,41 @@ def associate(cost, match_thr):
     return matches
 
 
+def shape_similarity_v2(tracks: torch.Tensor, dets: torch.Tensor) -> torch.Tensor:
+    n_tracks = tracks.shape[0]
+    n_dets = dets.shape[0]
+
+    if n_tracks == 0 or n_dets == 0:
+        # Return neutral similarity (all zeros or ones depending on logic)
+        return torch.zeros((n_dets, n_tracks), dtype=torch.float32, device=dets.device)
+
+    dw = (dets[:, 2] - dets[:, 0]).view(-1, 1)  # [N_dets, 1]
+    dh = (dets[:, 3] - dets[:, 1]).view(-1, 1)
+    tw = (tracks[:, 2] - tracks[:, 0]).view(1, -1)  # [1, N_tracks]
+    th = (tracks[:, 3] - tracks[:, 1]).view(1, -1)
+
+    w_diff = torch.abs(dw - tw) / torch.maximum(dw, tw)
+    h_diff = torch.abs(dh - th) / torch.maximum(dh, th)
+
+    similarity = torch.exp(-(w_diff + h_diff))  # shape: [N_dets, N_tracks]
+    return similarity
+
+
 def iterative_assignment(tracks, dets_high, dets_low, dets_del_high, match_thr, penalty_p, penalty_q,
                         reduce_step, frame_id, d_t=3):
     # Initialization
     matches = []
-    dets = dets_high + dets_low + dets_del_high
+    dets = dets_high + dets_low #+ dets_del_high
 
     # Calculate preliminaries
     iou_sim, iou_dist = iou_distance(tracks, dets)
     cos_dist = cos_distance(tracks, dets)
+    # cost_pose = cos_pose(tracks, dets)
+    # shape_sim = shape_similarity_v2(torch.tensor([t.x1y1x2y2 for t in tracks], dtype=torch.float32),
+    #                                 torch.tensor([d.x1y1x2y2 for d in dets], dtype=torch.float32)).numpy()
 
     # Calculate cost
-    cost = 0.50 * iou_dist + 0.50 * cos_dist
+    cost = 0.50 * iou_dist + 0.50 * cos_dist  #+ 0.5 * shape_sim.T
     cost += 0.10 * conf_distance(tracks, dets) + 0.05 * angle_distance(tracks, dets, frame_id, d_t)
 
     # Give penalty
@@ -251,3 +304,5 @@ def track_aware_nms(pair_sims, scores, num_tracks, nms_thresh, score_thresh):
                     allow_indices[jdx] = 0
 
     return allow_indices == 1
+
+
