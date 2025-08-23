@@ -230,7 +230,6 @@ def iterative_assignment(tracks, dets_high, dets_low, dets_del_high, match_thr, 
     # Initialization
     matches = []
     dets = dets_high + dets_low #+ dets_del_high
-
     # Calculate preliminaries
     iou_sim, iou_dist = iou_distance(tracks, dets)
     cos_dist = cos_distance(tracks, dets)
@@ -278,7 +277,6 @@ def iterative_assignment(tracks, dets_high, dets_low, dets_del_high, match_thr, 
     u_dets = [d for d in range(len(dets)) if d not in m_dets]
 
     return matches, u_tracks, u_dets
-
 
 def track_aware_nms(pair_sims, scores, num_tracks, nms_thresh, score_thresh):
     # Initialization

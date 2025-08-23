@@ -14,20 +14,22 @@ def make_parser():
     parser = argparse.ArgumentParser("Tracker")
 
     # Basic
-    parser.add_argument("--pickle_dir", type=str, default="/DATA/Tawheed/appended/")
+    parser.add_argument("--pickle_dir", type=str, default="/DATA/Tawheed/track_files/pickle_path/normalized/")
     parser.add_argument("--output_dir", type=str, default="../outputs/3. track/")
-    parser.add_argument("--train_pickle", type=str, default="/DATA/Tawheed/track_files/dance_train_with_pose.pickle")
+    parser.add_argument("--train_pickle", type=str, default="/DATA/Tawheed/track_files/dance_train_with_pose1.pickle")
     parser.add_argument("--data_dir", type=str, default="/DATA/Tawheed/MOTDatasets/")
-    parser.add_argument("--checkpoint_path", type=str, default="/home/tawheed/MOT/TrackTrack/outputs/memory_1/memory_bank_best_loss_0.13229473876953124.pth")
+    parser.add_argument("--checkpoint_path", type=str, default="/home/tawheed/MOT/TrackTrack/outputs/memory/epoch_17_loss_0.24095295429229735.pth")
+    parser.add_argument("--association_checkpoint", type=str, default="/home/tawheed/MOT/TrackTrack/cross_attn_matcher/checkpoints/best_model_loss_0.0419.pth")
+    # /home/tawheed/MOT/TrackTrack/outputs/memory_1/memory_bank_best_loss_0.13229473876953124.pth
     parser.add_argument("--output_memory", type=str, default="../outputs/memory/")
-    parser.add_argument("--dataset", type=str, default="MOT17")
+    parser.add_argument("--dataset", type=str, default="DanceTrack")
     parser.add_argument("--mode", type=str, default="train_memory")
     parser.add_argument("--seed", type=float, default=10000)
 
     # For trackers
     parser.add_argument("--min_len", type=int, default=3)
     parser.add_argument("--min_box_area", type=float, default=100)
-    parser.add_argument("--max_time_lost", type=float, default=30)
+    parser.add_argument("--max_time_lost", type=float, default=25)
     parser.add_argument("--penalty_p", type=float, default=0.20)
     parser.add_argument("--penalty_q", type=float, default=0.40)
     parser.add_argument("--reduce_step", type=float, default=0.05)
@@ -52,7 +54,7 @@ def track(detections, detections_95, data_path, result_folder, mode):
         seq_info = open(data_path + vid_name + '/seqinfo.ini', mode='r')
         for s_i in seq_info.readlines():
             if 'frameRate' in s_i:
-                args.max_time_lost = int(s_i.split('=')[-1]) * 2
+                args.max_time_lost = int(s_i.split('=')[-1])
             if 'imWidth' in s_i:
                 args.img_w = int(s_i.split('=')[-1])
             if 'imHeight' in s_i:
@@ -77,7 +79,8 @@ def track(detections, detections_95, data_path, result_folder, mode):
             x1y1whs, track_ids, scores = [], [], []
             for t in track_results:
                 # Check aspect ratio
-                if 'MOT' in data_path and t.x1y1wh[2] / t.x1y1wh[3] > 1.6:
+                if 'MOT' in data_path.split('/')[-2] and t.x1y1wh[2] / t.x1y1wh[3] > 1.6:
+                    print(f"Skipping track {t.track_id} in frame {frame_id} due to aspect ratio.")
                     continue
 
                 # Check track id, minimum box area

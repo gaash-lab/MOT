@@ -1,6 +1,7 @@
 from trackers.cmc import *
 from trackers.utils import *
 from trackers.track import *
+from trackers.tools import *
 import numpy as np
 from numpy import dot
 from numpy.linalg import norm
@@ -10,6 +11,7 @@ import random
 import pickle
 import os
 from tqdm import tqdm
+from trackers.cross_attention_matcher import *
 
 
 
@@ -156,10 +158,13 @@ class Tracker(object):
         self.memory_bank = []  # Stores dicts with id, feat, area, hw
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.matcher = CrossAttentionMatcher(args.feat_dim, args.pose_dim).to(self.device)
+        self.association_engine = CrossAssociationEngine(args.feat_dim, args.pose_dim).to(self.device)
+        self.load_checkpoint(args.association_checkpoint, self.association_engine)
+        self.association_engine.eval()  # Set to evaluation mode
         if args.mode == "train_memory":
             self.optimizer = torch.optim.Adam(self.matcher.parameters(), lr=1e-4) 
         else:
-            self.load_checkpoint(args.checkpoint_path)
+            self.load_checkpoint(args.checkpoint_path, self.matcher)
             self.matcher.eval()  # Set to evaluation mode
         self.train_pickle = args.train_pickle
         self.epochs = args.num_epochs
@@ -172,12 +177,12 @@ class Tracker(object):
         if args.mode != "train_memory":
             self.cmc = CMC(vid_name)
 
-    def load_checkpoint(self, checkpoint_path):
+    def load_checkpoint(self, checkpoint_path, matcher):
         if not os.path.exists(checkpoint_path):
             raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
         
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
-        self.matcher.load_state_dict(checkpoint["model_state"])
+        matcher.load_state_dict(checkpoint["model_state"])
 
 
     def train_memory_bank(self):
@@ -358,11 +363,31 @@ class Tracker(object):
 
         [t.predict() for t in tracked_lost + new]
 
-        dets_combined = dets_high + dets_low + dets_del_high
-        matches, u_tracks, u_dets = iterative_assignment(tracked_lost, dets_high, dets_low, dets_del_high,
-                                                         self.args.match_thr, self.args.penalty_p, self.args.penalty_q,
-                                                         self.args.reduce_step, self.frame_id)
+        dets_combined = dets_high + dets_low #+ dets_del_high
+        # matches, u_tracks, u_dets = iterative_assignment(tracked_lost, dets_high, dets_low, dets_del_high,
+        #                                                  self.args.match_thr, self.args.penalty_p, self.args.penalty_q,
+        #                                                  self.args.reduce_step, self.frame_id)
 
+        matches, u_tracks, u_dets = cross_attention_assignment(tracked_lost, dets_high, self.association_engine, self.args.match_thr)
+        
+        # Match unmatched tracks (u_tracks) with low confidence detections (dets_low)
+        if len(u_tracks) > 0 and len(dets_low) > 0:
+            tracks_unmatched = [tracked_lost[i] for i in u_tracks]
+            matches_low, u_tracks_low, u_dets_low = cross_attention_assignment(
+            tracks_unmatched, dets_low, self.association_engine, self.args.match_thr
+            )
+            
+            # Update original matches with new matches from low confidence detections
+            offset = len(dets_high)  # Offset for indexing into dets_combined
+            for t, d in matches_low:
+                matches.append((u_tracks[t], d + offset))  # Add offset to detection index
+            
+            # Update u_tracks to those still unmatched after low dets matching
+            u_tracks = [u_tracks[i] for i in u_tracks_low]
+            
+            # Update dets_low to only include unmatched detections
+            dets_low = [dets_low[i] for i in u_dets_low]
+            
         for t, d in matches:
             tracked_lost[t].update(self.frame_id, dets_combined[d])
 
@@ -371,8 +396,8 @@ class Tracker(object):
 
         dets_high_left = [dets_high[i] for i in u_dets if i < len(dets_high)]
         matches, u_tracks, u_dets = iterative_assignment(new, dets_high_left, [], [],
-                                                         self.args.match_thr, self.args.penalty_p, self.args.penalty_q,
-                                                         self.args.reduce_step, self.frame_id)
+                                   self.args.match_thr, self.args.penalty_p, self.args.penalty_q,
+                                   self.args.reduce_step, self.frame_id)
 
         for t, d in matches:
             new[t].update(self.frame_id, dets_high_left[d])
@@ -382,7 +407,6 @@ class Tracker(object):
 
         for track in self.tracks:
             if self.frame_id - track.end_frame_id > self.max_time_lost:
-                # if not any(mem['id'] == track.track_id for mem in self.memory_bank):
                 h, w = track.x1y1wh[3], track.x1y1wh[2]
                 area = h * w
                 feat = track.feat
@@ -400,13 +424,6 @@ class Tracker(object):
         self.init_tracks([dets_high_left[i] for i in u_dets])
 
         return [t for t in self.tracks if t.state == TrackState.Tracked]
-
-    def update_without_detections(self):
-        self.frame_id += 1
-        self.tracks = [t for t in self.tracks if t.state != TrackState.New]
-
-        warp_matrix = self.cmc.get_warp_matrix()
-        apply_cmc(self.tracks, warp_matrix)
 
         [t.predict() for t in self.tracks]
 
