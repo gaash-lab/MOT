@@ -19,7 +19,7 @@ def make_parser():
     parser.add_argument("--train_pickle", type=str, default="/DATA/Tawheed/track_files/dance_train_with_pose1.pickle")
     parser.add_argument("--data_dir", type=str, default="/DATA/Tawheed/MOTDatasets/")
     parser.add_argument("--checkpoint_path", type=str, default="/home/tawheed/MOT/TrackTrack/outputs/memory/epoch_17_loss_0.24095295429229735.pth")
-    parser.add_argument("--association_checkpoint", type=str, default="/home/tawheed/MOT/TrackTrack/cross_attn_matcher/checkpoints/best_model_loss_0.0419.pth")
+    parser.add_argument("--association_checkpoint", type=str, default="/home/tawheed/MOT/TrackTrack/cross_attn_matcher/checkpoints/best_model_loss_0.0008.pth")
     # /home/tawheed/MOT/TrackTrack/outputs/memory_1/memory_bank_best_loss_0.13229473876953124.pth
     parser.add_argument("--output_memory", type=str, default="../outputs/memory/")
     parser.add_argument("--dataset", type=str, default="DanceTrack")
@@ -64,6 +64,7 @@ def track(detections, detections_95, data_path, result_folder, mode):
         tracker = Tracker(args, vid_name)
 
         # For each frame
+        max_trackId = 0
         results = []
         for frame_id in detections[vid_name].keys():
             # Run tracking
@@ -87,11 +88,12 @@ def track(detections, detections_95, data_path, result_folder, mode):
                 if t.track_id > 0 and t.x1y1wh[2] * t.x1y1wh[3] > args.min_box_area:
                     x1y1whs.append(t.x1y1wh)
                     track_ids.append(t.track_id)
+                    max_trackId = max(max_trackId, t.track_id)
                     scores.append(t.score)
 
             # Merge
             results.append([frame_id, track_ids, x1y1whs, scores])
-
+        print(f"maximum track id: {max_trackId}")
         # Logging & Write results
         result_filename = os.path.join(result_folder, '{}.txt'.format(vid_name))
         write_results(result_filename, results)

@@ -3,6 +3,8 @@ from scipy.optimize import linear_sum_assignment
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from trackers.enhanced_costs import compute_enhanced_costs
+
 
 def linear_assignment(cost_matrix, match_thr=0.5):
     """Modified to handle 2D cost matrices only"""
@@ -26,81 +28,113 @@ def linear_assignment(cost_matrix, match_thr=0.5):
     u_dets += list(all_dets - matched_dets)
     return matches, u_tracks, u_dets
 
-class CrossAssociationEngine(nn.Module):
-    def __init__(self, feat_dim=2048, pose_dim=34, hidden_dim=256):
+
+
+class EnhancedCrossAssociationEngine(nn.Module):
+    def __init__(self, feat_dim=2048, pose_dim=34, hidden_dim=512, num_cost_types=7):
         super().__init__()
-        assert hidden_dim % 4 == 0, "hidden_dim must be divisible by num_heads"
+        assert hidden_dim % 8 == 0, "hidden_dim must be divisible by num_heads"
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.num_heads = 4
+        self.num_heads = 8
         self.head_dim = hidden_dim // self.num_heads
+        self.num_cost_types = num_cost_types
         
+        # Feature projections
         self.feat_proj = nn.Sequential(
             nn.Linear(feat_dim, hidden_dim),
             nn.ReLU(),
+            nn.Dropout(0.1),
             nn.LayerNorm(hidden_dim)
         )
+        
         self.pose_proj = nn.Sequential(
             nn.Linear(pose_dim, hidden_dim),
             nn.ReLU(),
+            nn.Dropout(0.1),
             nn.LayerNorm(hidden_dim)
         )
 
+        # Multi-head attention with larger capacity
         self.attention = nn.MultiheadAttention(
             embed_dim=hidden_dim,
             num_heads=self.num_heads,
             dropout=0.1,
-            batch_first=True  
+            batch_first=True
         )
         
-        self.cost_mlp = nn.Sequential(
-            nn.Linear(2, hidden_dim//2),
+        # Enhanced cost processing network
+        self.cost_processor = nn.Sequential(
+            nn.Linear(num_cost_types, hidden_dim // 2),
             nn.ReLU(),
-            nn.Linear(hidden_dim//2, 1)
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim // 2, hidden_dim // 4),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 4, 1),
+            nn.Sigmoid()  # Output weights for cost modulation
         )
 
-        self.concat_proj = nn.Sequential(
+        # Feature fusion network
+        self.feature_fusion = nn.Sequential(
             nn.Linear(hidden_dim * 2, hidden_dim),
             nn.ReLU(),
+            nn.Dropout(0.1),
             nn.LayerNorm(hidden_dim)
         )
+        
+        # Final matching head
+        self.matching_head = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim // 2, 1)
+        )
 
-    def forward(self, tracks, detections, cost_vector=None):
+    def forward(self, tracks, detections, cost_matrix=None):
         """
+        Enhanced forward pass with multi-cost processing
+        
         Args:
-            tracks: Dict with keys:
-                'features': (N_tracks, feat_dim)
-                'poses': (N_tracks, pose_dim)
+            tracks: Dict with keys 'features', 'poses', 'boxes', 'confidences'
             detections: Dict with same structure
-            cost_vector: Optional (N_tracks, N_dets, 2)
+            cost_matrix: (N_tracks, N_dets, num_cost_types)
         Returns:
             attn_weights: (N_tracks, N_dets)
         """
         device = self.device
         
+        # Handle dimension mismatches
         tracks['features'] = tracks['features'].squeeze(1) if tracks['features'].dim() == 3 else tracks['features']
         detections['features'] = detections['features'].squeeze(1) if detections['features'].dim() == 3 else detections['features']
         
-        tracks['features'] = tracks['features'].to(device)
-        tracks['poses'] = tracks['poses'].to(device)
-        detections['features'] = detections['features'].to(device)
-        detections['poses'] = detections['poses'].to(device)
+        # Move to device
+        for key in ['features', 'poses', 'boxes']:
+            if key in tracks:
+                tracks[key] = tracks[key].to(device)
+                detections[key] = detections[key].to(device)
         
-        if cost_vector is not None:
-            cost_vector = cost_vector.to(device)
+        if cost_matrix is not None:
+            cost_matrix = cost_matrix.to(device)
 
-        track_feats = self.feat_proj(tracks['features']) 
-        det_feats = self.feat_proj(detections['features'])  
+        # Project features
+        track_feats = self.feat_proj(tracks['features'])  # (N_tracks, hidden_dim)
+        det_feats = self.feat_proj(detections['features'])  # (N_dets, hidden_dim)
         
-        # track_feats = track_feats + self.pose_proj(tracks['poses'])
-        track_feats = torch.cat([track_feats, self.pose_proj(tracks['poses'])], dim=1)
-        # det_feats = det_feats + self.pose_proj(detections['poses'])
-        det_feats = torch.cat([det_feats, self.pose_proj(detections['poses'])], dim=1)
-        track_feats = self.concat_proj(track_feats)  # [N, 256]
-        det_feats = self.concat_proj(det_feats)      # [N, 256]
-        # print(f"Track feats shape: {track_feats.shape}, Det feats shape: {det_feats.shape}")
-        query = track_feats.unsqueeze(1).transpose(0, 1)  
-        key = value = det_feats.unsqueeze(1).transpose(0, 1)  
+        # Project poses
+        track_pose_feats = self.pose_proj(tracks['poses'])
+        det_pose_feats = self.pose_proj(detections['poses'])
         
+        # Fuse appearance and pose features
+        track_combined = torch.cat([track_feats, track_pose_feats], dim=1)
+        det_combined = torch.cat([det_feats, det_pose_feats], dim=1)
+        
+        track_fused = self.feature_fusion(track_combined)  # (N_tracks, hidden_dim)
+        det_fused = self.feature_fusion(det_combined)      # (N_dets, hidden_dim)
+        
+        # Cross-attention between tracks and detections
+        # Prepare for attention: (batch_size=1, seq_len, hidden_dim)
+        query = track_fused.unsqueeze(0)  # (1, N_tracks, hidden_dim)
+        key = value = det_fused.unsqueeze(0)  # (1, N_dets, hidden_dim)
+
         attn_output, attn_weights = self.attention(
             query=query,
             key=key,
@@ -108,18 +142,36 @@ class CrossAssociationEngine(nn.Module):
             need_weights=True
         )
         
-        attn_weights = attn_weights.mean(dim=1)  
+        # Get attention weights: (1, N_tracks, N_dets) -> (N_tracks, N_dets)
+        attn_weights = attn_weights.squeeze(0)
         
-        if cost_vector is not None:
-            cost_bias = self.cost_mlp(cost_vector).squeeze(-1) 
-            # attn_weights = attn_weights - cost_bias
-            attn_weights = attn_weights * (1.0 - torch.sigmoid(cost_bias))
+        # Apply cost-based modulation
+        if cost_matrix is not None:
+            # Process costs to get modulation weights
+            cost_weights = self.cost_processor(cost_matrix)  # (N_tracks, N_dets, 1)
+            cost_weights = cost_weights.squeeze(-1)  # (N_tracks, N_dets)
+            
+            # Modulate attention weights (multiplicative)
+            attn_weights = attn_weights * cost_weights
         
-        return attn_weights
-
+        # Apply final matching head for refinement
+        # Compute pairwise features for final decision
+        track_expanded = track_fused.unsqueeze(1).expand(-1, det_fused.shape[0], -1)  # (N_tracks, N_dets, hidden_dim)
+        det_expanded = det_fused.unsqueeze(0).expand(track_fused.shape[0], -1, -1)    # (N_tracks, N_dets, hidden_dim)
+        
+        # Element-wise product for interaction
+        interaction_feats = track_expanded * det_expanded  # (N_tracks, N_dets, hidden_dim)
+        
+        # Final matching scores
+        matching_scores = self.matching_head(interaction_feats).squeeze(-1)  # (N_tracks, N_dets)
+        
+        # Combine attention weights with matching scores
+        final_scores = attn_weights + matching_scores
+        
+        return final_scores
 
     def compute_loss(self, attn_weights, gt_matches):
-        """Modified to handle variable batch sizes"""
+        """Standard focal loss computation"""
         device = attn_weights.device
         targets = torch.zeros_like(attn_weights)
         
@@ -128,29 +180,41 @@ class CrossAssociationEngine(nn.Module):
                 targets[t_idx, d_idx] = 1
         
         return self.focal_loss(attn_weights, targets)
+    
+    def compute_weighted_loss(self, attn_weights, gt_matches, sample_weights):
+        """Weighted focal loss with hard negative mining"""
+        device = attn_weights.device
+        targets = torch.zeros_like(attn_weights)
+        
+        for t_idx, d_idx in gt_matches:
+            if t_idx < targets.shape[0] and d_idx < targets.shape[1]:
+                targets[t_idx, d_idx] = 1
+        
+        return self.weighted_focal_loss(attn_weights, targets, sample_weights)
 
     def focal_loss(self, preds, targets, alpha=0.25, gamma=2):
+        """Standard focal loss"""
         BCE_loss = F.binary_cross_entropy_with_logits(preds, targets, reduction='none')
         pt = torch.exp(-BCE_loss)
         return (alpha * (1-pt)**gamma * BCE_loss).mean()
     
+    def weighted_focal_loss(self, preds, targets, weights, alpha=0.25, gamma=2):
+        """Weighted focal loss for hard negative mining"""
+        BCE_loss = F.binary_cross_entropy_with_logits(preds, targets, reduction='none')
+        pt = torch.exp(-BCE_loss)
+        focal_weight = alpha * (1-pt)**gamma
+        
+        # Apply sample weights
+        weighted_loss = focal_weight * BCE_loss * weights
+        
+        return weighted_loss.sum() / (weights.sum() + 1e-8)
 
-# def box_iou(boxes1, boxes2):
-#     """Vectorized IoU computation with proper dimension handling"""
-#     boxes1 = boxes1[:,:4] if boxes1.shape[-1] > 4 else boxes1
-#     boxes2 = boxes2[:,:4] if boxes2.shape[-1] > 4 else boxes2
+class CrossAssociationEngine(EnhancedCrossAssociationEngine):
+    """Backward compatibility wrapper"""
+    def __init__(self, feat_dim=2048, pose_dim=34, hidden_dim=256):
+        # Use enhanced version with backward compatible defaults
+        super().__init__(feat_dim=feat_dim, pose_dim=pose_dim, hidden_dim=max(hidden_dim, 512))
     
-#     area1 = (boxes1[:,2] - boxes1[:,0]) * (boxes1[:,3] - boxes1[:,1])
-#     area2 = (boxes2[:,2] - boxes2[:,0]) * (boxes2[:,3] - boxes2[:,1])
-    
-#     lt = torch.max(boxes1[:,None,:2], boxes2[None,:,:2])  
-#     rb = torch.min(boxes1[:,None,2:4], boxes2[None,:,2:4])  
-    
-#     wh = (rb - lt).clamp(min=0)
-#     inter = wh[...,0] * wh[...,1]
-    
-#     return (inter + 1e-7) / (area1[:,None] + area2[None,:] - inter + 1e-7)
-
 
 def box_iou(boxes1, boxes2, buffer=5):
     """
@@ -228,25 +292,6 @@ def compute_oks(poses1, poses2, kappa=0.05):
     
     return oks
 
-def shape_similarity_v2(tracks: torch.Tensor, dets: torch.Tensor) -> torch.Tensor:
-    n_tracks = tracks.shape[0]
-    n_dets = dets.shape[0]
-
-    if n_tracks == 0 or n_dets == 0:
-        # Return neutral similarity (all zeros or ones depending on logic)
-        return torch.zeros((n_dets, n_tracks), dtype=torch.float32, device=dets.device)
-
-    dw = (dets[:, 2] - dets[:, 0]).view(-1, 1)  # [N_dets, 1]
-    dh = (dets[:, 3] - dets[:, 1]).view(-1, 1)
-    tw = (tracks[:, 2] - tracks[:, 0]).view(1, -1)  # [1, N_tracks]
-    th = (tracks[:, 3] - tracks[:, 1]).view(1, -1)
-
-    w_diff = torch.abs(dw - tw) / torch.maximum(dw, tw)
-    h_diff = torch.abs(dh - th) / torch.maximum(dh, th)
-
-    similarity = torch.exp(-(w_diff + h_diff))  # shape: [N_dets, N_tracks]
-    return similarity
-
 
 def compute_costs(track_boxes, det_boxes, track_poses, det_poses):
     """Compute combined spatial and shape costs"""
@@ -275,7 +320,8 @@ def cross_attention_assignment(tracks, detections, matcher, match_thr=0.5):
         'poses': torch.stack([t.pose if isinstance(t.pose, torch.Tensor) else 
                             torch.tensor(t.pose, dtype=torch.float32) for t in tracks]),
         'boxes': torch.stack([t.x1y1x2y2 if isinstance(t.x1y1x2y2, torch.Tensor) else 
-                            torch.tensor(t.x1y1x2y2, dtype=torch.float32) for t in tracks])
+                            torch.tensor(t.x1y1x2y2, dtype=torch.float32) for t in tracks]),
+        'scores': torch.tensor([t.score if isinstance(t.score, (float, int)) else 0.0 for t in tracks], dtype=torch.float32)
     }
     
     det_dict = {
@@ -284,16 +330,15 @@ def cross_attention_assignment(tracks, detections, matcher, match_thr=0.5):
         'poses': torch.stack([d.pose if isinstance(d.pose, torch.Tensor) else 
                             torch.tensor(d.pose, dtype=torch.float32) for d in detections]),
         'boxes': torch.stack([d.x1y1x2y2 if isinstance(d.x1y1x2y2, torch.Tensor) else 
-                            torch.tensor(d.x1y1x2y2, dtype=torch.float32) for d in detections])
+                            torch.tensor(d.x1y1x2y2, dtype=torch.float32) for d in detections]),
+        'scores': torch.tensor([d.score if isinstance(d.score, (float, int)) else 0.0 for d in detections], dtype=torch.float32)
     }
     
     cost_vector = None
     if len(tracks) > 0 and len(detections) > 0:
-        cost_vector = compute_costs(
-            track_dict['boxes'], 
-            det_dict['boxes'],
-            track_dict['poses'],
-            det_dict['poses']
+        cost_vector = compute_enhanced_costs(
+            track_dict,
+            det_dict
         )
         # print(f"cost vector: {cost_vector}")
     
