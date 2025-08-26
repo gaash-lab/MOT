@@ -334,14 +334,14 @@ class Tracker(object):
         allow_indices = track_aware_nms(iou_sim, scores, len(tracks), self.args.tai_thr, self.args.init_thr)
 
         for idx, flag in enumerate(allow_indices):
-            if flag:
-                det = dets[idx]
-                reused_id = self.match_with_memory(det)
-                if reused_id is not None:
-                    det.initiate(self.frame_id, self.counter, reused_id)
-                else:
-                    det.initiate(self.frame_id, self.counter)
-                self.tracks.append(det)
+            # if flag:
+            det = dets[idx]
+            reused_id = self.match_with_memory(det)
+            if reused_id is not None:
+                det.initiate(self.frame_id, self.counter, reused_id)
+            else:
+                det.initiate(self.frame_id, self.counter)
+            self.tracks.append(det)
 
     def update(self, dets, dets_95):
         self.frame_id += 1

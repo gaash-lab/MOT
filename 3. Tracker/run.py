@@ -19,7 +19,7 @@ def make_parser():
     parser.add_argument("--train_pickle", type=str, default="/DATA/Tawheed/track_files/dance_train_with_pose1.pickle")
     parser.add_argument("--data_dir", type=str, default="/DATA/Tawheed/MOTDatasets/")
     parser.add_argument("--checkpoint_path", type=str, default="/home/tawheed/MOT/TrackTrack/outputs/memory/epoch_17_loss_0.24095295429229735.pth")
-    parser.add_argument("--association_checkpoint", type=str, default="/home/tawheed/MOT/TrackTrack/cross_attn_matcher/checkpoints/best_model_loss_0.0008.pth")
+    parser.add_argument("--association_checkpoint", type=str, default="/home/tawheed/MOT/TrackTrack/cross_attn_matcher/checkpoints_enhanced/model_43_loss_0.0014.pth")
     # /home/tawheed/MOT/TrackTrack/outputs/memory_1/memory_bank_best_loss_0.13229473876953124.pth
     parser.add_argument("--output_memory", type=str, default="../outputs/memory/")
     parser.add_argument("--dataset", type=str, default="DanceTrack")

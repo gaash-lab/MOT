@@ -139,8 +139,8 @@ def compute_enhanced_costs(track_data, det_data, temporal_gap=1):
     Combine multiple cost metrics for robust tracking
     
     Args:
-        track_data: Dict with 'features', 'poses', 'boxes', 'confidences', 'velocities' (optional)
-        det_data: Dict with 'features', 'poses', 'boxes', 'confidences'
+        track_data: Dict with 'features', 'poses', 'boxes', 'scores'
+        det_data: Dict with 'features', 'poses', 'boxes', 'scores'
         temporal_gap: Number of frames between track and detection
     
     Returns:
@@ -148,34 +148,36 @@ def compute_enhanced_costs(track_data, det_data, temporal_gap=1):
     """
     costs = []
     
-    appearance_cost = cosine_feature_distance(track_data['features'], det_data['features'])
-    costs.append(appearance_cost)
+    # appearance_cost = cosine_feature_distance(track_data['features'], det_data['features'])
+    # costs.append(appearance_cost)
     
     spatial_cost = 1.0 - box_iou(track_data['boxes'], det_data['boxes'])
     costs.append(spatial_cost)
     
-    motion_cost = motion_prediction_cost(
-        track_data['boxes'], 
-        det_data['boxes'],
-        track_data.get('velocities'),
-        temporal_gap
-    )
-    costs.append(motion_cost)
+    # motion_cost = motion_prediction_cost(
+    #     track_data['boxes'], 
+    #     det_data['boxes'],
+    #     track_data.get('velocities'),
+    #     temporal_gap
+    # )
+    # costs.append(motion_cost)
     
     pose_cost = 1.0 - compute_oks(track_data['poses'], det_data['poses'])
     costs.append(pose_cost)
     
-    size_cost = size_consistency_cost(track_data['boxes'], det_data['boxes'])
-    costs.append(size_cost)
+    # size_cost = size_consistency_cost(track_data['boxes'], det_data['boxes'])
+    # costs.append(size_cost)
     
-    angle_cost = pose_angle_consistency(track_data['poses'], det_data['poses'])
-    costs.append(angle_cost)
+    # angle_cost = pose_angle_consistency(track_data['poses'], det_data['poses'])
+    # costs.append(angle_cost)
     
-    if 'scores' in track_data and 'scores' in det_data:
-        conf_cost = confidence_consistency_cost(track_data['scores'], det_data['scores'])
-        costs.append(conf_cost)
+    # if 'scores' in track_data and 'scores' in det_data:
+    #     conf_cost = confidence_consistency_cost(track_data['scores'], det_data['scores'])
+    #     print(conf_cost)
+    #     costs.append(conf_cost)
     
     # Stack all costs: (N_tracks, N_dets, num_costs)
+    # costs = [c.unsqueeze(-1) if c.dim() == 2 else c for c in costs]
     cost_matrix = torch.stack(costs, dim=-1)
     
     return cost_matrix
