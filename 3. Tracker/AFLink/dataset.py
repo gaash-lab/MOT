@@ -6,10 +6,34 @@ from torch.utils.data import Dataset
 from random import randint, normalvariate
 
 
-SEQ = {'train': ['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN',
-                 'MOT17-10-FRCNN', 'MOT17-11-FRCNN', 'MOT17-13-FRCNN'],
-       'test': ['MOT17-01-FRCNN', 'MOT17-03-FRCNN', 'MOT17-06-FRCNN', 'MOT17-07-FRCNN',
-                'MOT17-08-FRCNN', 'MOT17-12-FRCNN', 'MOT17-14-FRCNN']}
+# SEQ = {'train': ['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN',
+#                  'MOT17-10-FRCNN', 'MOT17-11-FRCNN', 'MOT17-13-FRCNN'],
+#        'test': ['MOT17-01-FRCNN', 'MOT17-03-FRCNN', 'MOT17-06-FRCNN', 'MOT17-07-FRCNN',
+#                 'MOT17-08-FRCNN', 'MOT17-12-FRCNN', 'MOT17-14-FRCNN']}
+
+SEQ = {
+    'train': [
+        'dancetrack0001', 'dancetrack0002', 'dancetrack0006', 'dancetrack0008',
+        'dancetrack0012', 'dancetrack0015', 'dancetrack0016', 'dancetrack0020',
+        'dancetrack0023', 'dancetrack0024', 'dancetrack0027', 'dancetrack0029',
+        'dancetrack0032', 'dancetrack0033', 'dancetrack0037', 'dancetrack0039',
+        'dancetrack0044', 'dancetrack0045', 'dancetrack0049', 'dancetrack0051',
+        'dancetrack0052', 'dancetrack0053', 'dancetrack0055', 'dancetrack0057',
+        'dancetrack0061', 'dancetrack0062', 'dancetrack0066', 'dancetrack0068',
+        'dancetrack0069', 'dancetrack0072', 'dancetrack0074', 'dancetrack0075',
+        'dancetrack0080', 'dancetrack0082', 'dancetrack0083', 'dancetrack0086',
+        'dancetrack0087', 'dancetrack0096', 'dancetrack0098', 'dancetrack0099'
+    ],
+    'val': [
+        'dancetrack0004', 'dancetrack0005', 'dancetrack0007', 'dancetrack0010',
+        'dancetrack0014', 'dancetrack0018', 'dancetrack0019', 'dancetrack0025',
+        'dancetrack0026', 'dancetrack0030', 'dancetrack0034', 'dancetrack0035',
+        'dancetrack0041', 'dancetrack0043', 'dancetrack0047', 'dancetrack0058',
+        'dancetrack0063', 'dancetrack0065', 'dancetrack0073', 'dancetrack0077',
+        'dancetrack0079', 'dancetrack0081', 'dancetrack0090', 'dancetrack0094',
+        'dancetrack0097'
+    ]
+}
 
 
 class LinkData(Dataset):
@@ -27,7 +51,7 @@ class LinkData(Dataset):
     def initialize(self):
         id2info = dict()
         for seqid, seq in enumerate(SEQ['train'], start=1):
-            path_gt = join(self.root, '{}/gt/gt_{}_half.txt'.format(seq, self.mode))
+            path_gt = join(self.root, '{}/gt/gt.txt'.format(seq, self.mode))
             gts = np.loadtxt(path_gt, delimiter=',')
             gts = gts[(gts[:, 6] == 1) * (gts[:, 7] == 1)]
             ids = set(gts[:, 1])

@@ -49,7 +49,9 @@ def prepare_batch(features_dict, device='cuda'):
             tracks['boxes'], 
             detections['boxes'],
             tracks['poses'],
-            detections['poses']
+            detections['poses'],
+            tracks['features'],
+            detections['features']
         )
     else:
         cost_vector = None
@@ -81,7 +83,6 @@ def prepare_batch(features_dict, device='cuda'):
         cost_vector = cost_vector.to(device)
     
     return tracks, detections, cost_vector, gt_matches
-
 
 def box_iou(boxes1, boxes2, buffer=5):
     """
@@ -123,6 +124,9 @@ def box_iou(boxes1, boxes2, buffer=5):
 
 def compute_oks(poses1, poses2, kappa=0.05):
     """Robust OKS computation for (17,2) pose format"""
+    SCALE_FACTOR = 1000.0
+    poses1 = poses1 * SCALE_FACTOR  
+    poses2 = poses2 * SCALE_FACTOR
     kps1 = poses1.view(-1, 17, 2)  # (N,17,2)
     kps2 = poses2.view(-1, 17, 2)  # (M,17,2)
     
@@ -159,16 +163,69 @@ def compute_oks(poses1, poses2, kappa=0.05):
     
     return oks
 
-def compute_costs(track_boxes, det_boxes, track_poses, det_poses):
-    """Compute combined spatial and shape costs"""
-    with torch.no_grad():
-        ious = box_iou(track_boxes, det_boxes)
-        spatial_costs = 1.0 - ious
-        
-        shape_costs = 1.0 - compute_oks(track_poses, det_poses)
-        
-        return torch.stack([spatial_costs, shape_costs], dim=-1)
+def cos_distance(track_feats, det_feats):
+    """Cosine distance between track and detection features"""
+    # Ensure inputs are numpy arrays
+    track_feats = np.asarray(track_feats)
+    det_feats   = np.asarray(det_feats)
+
+    # Squeeze extra dimensions if present (e.g., (N,1,D) -> (N,D))
+    if track_feats.ndim == 3 and track_feats.shape[1] == 1:
+        track_feats = track_feats.squeeze(1)
+    if det_feats.ndim == 3 and det_feats.shape[1] == 1:
+        det_feats = det_feats.squeeze(1)
+
+    if track_feats.shape[0] == 0 or det_feats.shape[0] == 0:
+        return np.ones((track_feats.shape[0], det_feats.shape[0]), dtype=np.float64)
+
+    # Normalize features
+    track_feats = track_feats / (np.linalg.norm(track_feats, axis=1, keepdims=True) + 1e-8)
+    det_feats   = det_feats   / (np.linalg.norm(det_feats,   axis=1, keepdims=True) + 1e-8)
+
+    # Cosine distance
+    cos_dist = 1.0 - np.dot(track_feats, det_feats.T)  # (T, D)
+    cos_dist = np.clip(cos_dist, 0., 1.)
+    return cos_dist
+
+def size_consistency_cost(track_boxes, det_boxes):
+    """
+    Penalize large changes in bounding box size
+    """
+    track_areas = (track_boxes[:, 2] - track_boxes[:, 0]) * (track_boxes[:, 3] - track_boxes[:, 1])
+    det_areas = (det_boxes[:, 2] - det_boxes[:, 0]) * (det_boxes[:, 3] - det_boxes[:, 1])
     
+    # Compute area ratios
+    area_ratios = track_areas[:, None] / (det_areas[None, :] + 1e-7)
+    
+    # Cost increases with deviation from ratio of 1.0
+    size_costs = torch.abs(torch.log(area_ratios + 1e-7))
+    
+    return torch.clamp(size_costs, 0.0, 3.0)  # Cap at reasonable value
+
+def compute_costs(track_boxes, det_boxes, track_poses, det_poses, track_feats, det_feats):
+    """
+    Compute combined spatial, shape, and feature costs
+    Returns a (num_tracks, num_dets, 3) tensor
+    """
+    # with torch.no_grad():
+        # Spatial cost (IoU)
+    ious = box_iou(track_boxes, det_boxes)
+    spatial_costs = 1.0 - ious  # (T, D)
+
+    # Shape cost (OKS)
+    shape_costs = 1.0 - compute_oks(track_poses, det_poses)  # (T, D)
+
+    # Feature cost (Cosine distance)
+    track_feats_np = track_feats.cpu().numpy() if isinstance(track_feats, torch.Tensor) else track_feats
+    det_feats_np   = det_feats.cpu().numpy() if isinstance(det_feats, torch.Tensor) else det_feats
+    feat_costs = cos_distance(track_feats_np, det_feats_np)  # (T, D)
+    feat_costs = torch.from_numpy(feat_costs).to(spatial_costs.device).float()
+
+    # size_costs = size_consistency_cost(track_boxes, det_boxes)
+
+    # Stack into a 3D cost tensor
+    return torch.stack([spatial_costs, shape_costs, feat_costs], dim=-1)  # (T, D, 4)
+
 def save_checkpoint(model, optimizer, epoch, loss, output_dir, saved_checkpoints, best_loss, best_checkpoint_path):
     checkpoint_path = os.path.join(output_dir, f"model_{epoch}_loss_{loss:.4f}.pth")
     torch.save({
@@ -206,7 +263,7 @@ def train(args):
     with open(args.train_pickle, 'rb') as f:
         features_dict = pickle.load(f)
 
-    model = CrossAssociationEngine(feat_dim=2048, pose_dim=34, hidden_dim=256).float().to(device)
+    model = CrossAssociationEngine(feat_dim=2048, pose_dim=34, hidden_dim=512).float().to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
     saved_checkpoints = []
@@ -245,11 +302,11 @@ def train(args):
 def main():
     parser = argparse.ArgumentParser(description="Train CrossAssociationEngine on pose and spatial features")
     
-    parser.add_argument('--train_pickle', type=str, default="/DATA/Tawheed/track_files/dance_train_with_pose.pickle", help='Path to training pickle file containing framewise detections.')
+    parser.add_argument('--train_pickle', type=str, default="/DATA/Tawheed/track_files/pickle_path/normalized/dance_train_with_pose.pickle", help='Path to training pickle file containing framewise detections.')
     parser.add_argument('--epochs', type=int, default=50, help='Number of training epochs.')
     parser.add_argument('--steps_per_epoch', type=int, default=500, help='Training steps per epoch.')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size per training step.')
-    parser.add_argument('--output_dir', type=str, default='checkpoints', help='Directory to save model checkpoints.')
+    parser.add_argument('--output_dir', type=str, default='scaled_Pose', help='Directory to save model checkpoints.')
     
     args = parser.parse_args()
 

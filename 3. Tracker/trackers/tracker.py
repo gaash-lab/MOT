@@ -363,30 +363,30 @@ class Tracker(object):
 
         [t.predict() for t in tracked_lost + new]
 
-        dets_combined = dets_high + dets_low #+ dets_del_high
-        # matches, u_tracks, u_dets = iterative_assignment(tracked_lost, dets_high, dets_low, dets_del_high,
-        #                                                  self.args.match_thr, self.args.penalty_p, self.args.penalty_q,
-        #                                                  self.args.reduce_step, self.frame_id)
+        dets_combined = dets_high + dets_low + dets_del_high
+        matches, u_tracks, u_dets = iterative_assignment(tracked_lost, dets_high, dets_low, dets_del_high,
+                                                         self.args.match_thr, self.args.penalty_p, self.args.penalty_q,
+                                                         self.args.reduce_step, self.frame_id)
 
-        matches, u_tracks, u_dets = cross_attention_assignment(tracked_lost, dets_high, self.association_engine, self.args.match_thr)
+        # matches, u_tracks, u_dets = cross_attention_assignment(tracked_lost, dets_high, self.association_engine, self.args.match_thr)
         
         # Match unmatched tracks (u_tracks) with low confidence detections (dets_low)
-        if len(u_tracks) > 0 and len(dets_low) > 0:
-            tracks_unmatched = [tracked_lost[i] for i in u_tracks]
-            matches_low, u_tracks_low, u_dets_low = cross_attention_assignment(
-            tracks_unmatched, dets_low, self.association_engine, self.args.match_thr
-            )
+        # if len(u_tracks) > 0 and len(dets_low) > 0:
+        #     tracks_unmatched = [tracked_lost[i] for i in u_tracks]
+        #     matches_low, u_tracks_low, u_dets_low = cross_attention_assignment(
+        #     tracks_unmatched, dets_low, self.association_engine, self.args.match_thr
+        #     )
             
-            # Update original matches with new matches from low confidence detections
-            offset = len(dets_high)  # Offset for indexing into dets_combined
-            for t, d in matches_low:
-                matches.append((u_tracks[t], d + offset))  # Add offset to detection index
+        #     # Update original matches with new matches from low confidence detections
+        #     offset = len(dets_high)  # Offset for indexing into dets_combined
+        #     for t, d in matches_low:
+        #         matches.append((u_tracks[t], d + offset))  # Add offset to detection index
             
-            # Update u_tracks to those still unmatched after low dets matching
-            u_tracks = [u_tracks[i] for i in u_tracks_low]
+        #     # Update u_tracks to those still unmatched after low dets matching
+        #     u_tracks = [u_tracks[i] for i in u_tracks_low]
             
-            # Update dets_low to only include unmatched detections
-            dets_low = [dets_low[i] for i in u_dets_low]
+        #     # Update dets_low to only include unmatched detections
+        #     dets_low = [dets_low[i] for i in u_dets_low]
             
         for t, d in matches:
             tracked_lost[t].update(self.frame_id, dets_combined[d])
@@ -425,6 +425,12 @@ class Tracker(object):
 
         return [t for t in self.tracks if t.state == TrackState.Tracked]
 
+    def update_without_detections(self):
+        self.frame_id += 1
+        self.tracks = [t for t in self.tracks if t.state != TrackState.New]
+
+        warp_matrix = self.cmc.get_warp_matrix()
+        apply_cmc(self.tracks, warp_matrix)
         [t.predict() for t in self.tracks]
 
         for track in self.tracks:

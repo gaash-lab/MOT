@@ -1,6 +1,6 @@
 # Set Directories
-root_train = '../../dataset/MOT17/train'
-model_save_dir = '../preliminary/AFLink'
+root_train = '/DATA/Tawheed/MOTDatasets/DanceTrack/train/'
+model_save_dir = '/home/tawheed/MOT/TrackTrack/3. Tracker/AFLink/checkpoints/'
 
 # Set others
 train_batch = 16

@@ -225,28 +225,161 @@ def shape_similarity_v2(tracks: torch.Tensor, dets: torch.Tensor) -> torch.Tenso
     return similarity
 
 
+# def compute_oks(poses1, poses2, kappa=0.005):
+#     kps1 = poses1.view(-1, 17, 2)  
+#     kps2 = poses2.view(-1, 17, 2) 
+    
+#     valid1 = (kps1.abs().sum(dim=-1) > 1e-3)  
+#     valid2 = (kps2.abs().sum(dim=-1) > 1e-3)  
+    
+#     def get_scale(kps, valid):
+#         scales = []
+#         for i in range(len(kps)):
+#             vis_kps = kps[i][valid[i]]  
+#             if len(vis_kps) == 0:
+#                 scales.append(0.0)
+#                 continue
+#             scale = (vis_kps.max(dim=0)[0] - vis_kps.min(dim=0)[0]).prod()
+#             scales.append(scale)
+#         return torch.tensor(scales, device=kps1.device) 
+    
+#     scale1 = get_scale(kps1, valid1) 
+#     scale2 = get_scale(kps2, valid2)  
+#     scale = (scale1[:,None] + scale2[None,:]) / 2  
+    
+#     diff = kps1[:,None,:,:] - kps2[None,:,:,:]  
+#     sq_dist = (diff ** 2).sum(dim=-1)  
+    
+#     oks_kpts = torch.exp(-sq_dist / (2 * scale[...,None] * kappa**2 + 1e-7))  
+    
+#     valid_mask = valid1[:,None,:] & valid2[None,:,:]  
+#     oks_kpts = oks_kpts * valid_mask.float()
+    
+#     valid_count = valid_mask.sum(dim=-1) 
+#     oks = oks_kpts.sum(dim=-1) / (valid_count + 1e-7)
+    
+#     oks[valid_count == 0] = 0.0
+    
+#     return oks
+
+def compute_oks(poses1, poses2, kappa=0.05):
+    """
+    Compute Object Keypoint Similarity between two sets of poses.
+    
+    Args:
+        poses1: Tensor of shape (N, 34) - first 17 keypoints as [x1,y1,x2,y2,...]
+        poses2: Tensor of shape (M, 34) - same format as poses1
+        kappa: Scaling factor (default 0.05 as in COCO)
+    
+    Returns:
+        OKS matrix of shape (N, M) where higher values indicate better matches
+    """
+    # Reshape to (N, 17, 2) and (M, 17, 2)
+    SCALE_FACTOR = 1000.0
+    poses1 = poses1 * SCALE_FACTOR
+    poses2 = poses2 * SCALE_FACTOR
+    # print(f"poses1 shape: {poses1.shape}, poses2 shape: {poses2.shape}")
+    kps1 = poses1.view(-1, 17, 2)
+    kps2 = poses2.view(-1, 17, 2)
+    
+    # Create valid mask (keypoints with non-zero values)
+    valid1 = (kps1.abs().sum(dim=-1) > 1e-3)
+    valid2 = (kps2.abs().sum(dim=-1) > 1e-3)
+
+    # print(f"Valid keypoints - tracks: {valid1.sum()}/{valid1.numel()}")
+    # print(f"Valid keypoints - dets: {valid2.sum()}/{valid2.numel()}")
+
+    
+    def get_scale(kps, valid):
+        """Calculate scale as area of bounding box around visible keypoints"""
+        scales = []
+        for i in range(len(kps)):
+            vis_kps = kps[i][valid[i]]
+            if len(vis_kps) < 2:  # Need at least 2 points for scale
+                scales.append(1.0)  # Default scale
+                continue
+            bbox = torch.stack([vis_kps.min(dim=0)[0], vis_kps.max(dim=0)[0]])
+            scale = (bbox[1] - bbox[0]).prod()  # Area of bounding box
+            scales.append(max(scale.item(), 1e-3))  # Ensure scale > 0
+        return torch.tensor(scales, device=kps.device)
+    
+    # Calculate scales for each instance
+    scale1 = get_scale(kps1, valid1)
+    scale2 = get_scale(kps2, valid2)
+    scale = (scale1[:, None] + scale2[None, :]) / 2  # (N, M)
+
+    # print(f"Scale values - tracks: {scale1}")
+    # print(f"Scale values - dets: {scale2}")
+    # print(f"Scale matrix range: {scale.min()} to {scale.max()}")
+
+    
+    # Calculate squared distances between all keypoints
+    diff = kps1[:, None, :, :] - kps2[None, :, :, :]  # (N, M, 17, 2)
+    sq_dist = (diff ** 2).sum(dim=-1)  # (N, M, 17)
+
+    # print(f"Squared distance range: {sq_dist.min()} to {sq_dist.max()}")
+
+    
+    # Compute OKS for each keypoint
+    oks_kpts = torch.exp(-sq_dist / (2 * scale[..., None] * kappa**2 + 1e-7))
+    
+    # Apply valid mask (both keypoints must be valid)
+    valid_mask = valid1[:, None, :] & valid2[None, :, :]
+    oks_kpts = oks_kpts * valid_mask.float()
+    
+    # Sum over keypoints and normalize by valid count
+    valid_count = valid_mask.sum(dim=-1)
+    oks = oks_kpts.sum(dim=-1) / (valid_count + 1e-7)
+    
+    # Set OKS to 0 if no valid keypoints
+    oks[valid_count == 0] = 0.0
+
+    # print(f"Final OKS range: {oks.min()} to {oks.max()}")
+    # print("=== END DEBUG ===\n")
+    
+    return oks
+
 def iterative_assignment(tracks, dets_high, dets_low, dets_del_high, match_thr, penalty_p, penalty_q,
                         reduce_step, frame_id, d_t=3):
     # Initialization
     matches = []
-    dets = dets_high + dets_low #+ dets_del_high
-    # Calculate preliminaries
-    iou_sim, iou_dist = iou_distance(tracks, dets)
+    
+    
+    poses_1 = torch.tensor([t.pose for t in tracks], dtype=torch.float32)
+    poses_2 = torch.tensor([d.pose for d in (dets_high + dets_low)], dtype=torch.float32)
+    dets = dets_high + dets_low
+
     cos_dist = cos_distance(tracks, dets)
-    # cost_pose = cos_pose(tracks, dets)
-    # shape_sim = shape_similarity_v2(torch.tensor([t.x1y1x2y2 for t in tracks], dtype=torch.float32),
-    #                                 torch.tensor([d.x1y1x2y2 for d in dets], dtype=torch.float32)).numpy()
 
-    # Calculate cost
-    cost = 0.50 * iou_dist + 0.50 * cos_dist  #+ 0.5 * shape_sim.T
-    cost += 0.10 * conf_distance(tracks, dets) + 0.05 * angle_distance(tracks, dets, frame_id, d_t)
+    iou_sim, iou_dist = iou_distance(tracks, dets) 
+    if len(poses_1) == 0 or len(poses_2) == 0:
+        pose_dist = np.ones((len(tracks), len(dets)))
+    else:
+        oks_sim = compute_oks(poses_1, poses_2).numpy()
+        
+        pose_dist = 1.0 - oks_sim  # Convert to distance
 
-    # Give penalty
-    cost[:, len(dets_high):len(dets_high + dets_low)] += penalty_p
-    cost[:, len(dets_high + dets_low):] += penalty_q
+    conf_dist = conf_distance(tracks, dets) 
+    angle_dist = angle_distance(tracks, dets, frame_id, d_t) 
 
-    # Constraint & Clip
-    cost[iou_sim <= 0.10] = 1.
+    # weights = [0.45, 0.45, 0.05, 0.05]  # iou, pose, conf, angle
+    weights = [0.5,0.3, 0.2, 0.05]
+    cost = (weights[0] * iou_dist + 
+            weights[1] * pose_dist + 
+            weights[2] * cos_dist + 
+            weights[3] * conf_dist)
+    
+    # # Give penalty
+    # cost[:, len(dets_high):len(dets_high + dets_low)] += penalty_p
+    # cost[:, len(dets_high + dets_low):] += penalty_q
+    
+    cost[:, len(dets_high):len(dets_high + dets_low)] = np.minimum(
+        cost[:, len(dets_high):len(dets_high + dets_low)] + penalty_p, 1.0)
+    cost[:, len(dets_high + dets_low):] = np.minimum(
+        cost[:, len(dets_high + dets_low):] + penalty_q, 1.0)
+    
+    # Constraint
+    cost[iou_sim <= 0.20] = 1.0
     cost = np.clip(cost, 0, 1)
 
     # # Linear assignment

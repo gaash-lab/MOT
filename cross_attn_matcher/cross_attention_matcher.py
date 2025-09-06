@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class CrossAssociationEngine(nn.Module):
-    def __init__(self, feat_dim=2048, pose_dim=34, hidden_dim=256):
+    def __init__(self, feat_dim=2048, pose_dim=34, hidden_dim=512):
         super().__init__()
         assert hidden_dim % 4 == 0, "hidden_dim must be divisible by num_heads"
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -29,7 +29,7 @@ class CrossAssociationEngine(nn.Module):
         )
         
         self.cost_mlp = nn.Sequential(
-            nn.Linear(2, hidden_dim//2),
+            nn.Linear(3, hidden_dim//2),
             nn.ReLU(),
             nn.Linear(hidden_dim//2, 1)
         )
@@ -69,16 +69,13 @@ class CrossAssociationEngine(nn.Module):
         track_feats = self.feat_proj(tracks['features'])  # (N_tracks, hidden_dim)
         det_feats = self.feat_proj(detections['features'])  # (N_dets, hidden_dim)
         
-        # track_feats = track_feats + self.pose_proj(tracks['poses'])
         track_feats = torch.cat([track_feats, self.pose_proj(tracks['poses'])], dim=1)
-        # det_feats = det_feats + self.pose_proj(detections['poses'])
         det_feats = torch.cat([det_feats, self.pose_proj(detections['poses'])], dim=1)
         track_feats = self.concat_proj(track_feats)  # [N, 256]
         det_feats = self.concat_proj(det_feats)      # [N, 256]
         
         query = track_feats.unsqueeze(1).transpose(0, 1)  # (1, N_tracks, hidden_dim)
         key = value = det_feats.unsqueeze(1).transpose(0, 1)  # (1, N_dets, hidden_dim)
-        # print(f"Query shape: {query.shape}, Key shape: {key.shape}, Value shape: {value.shape}")
 
         attn_output, attn_weights = self.attention(
             query=query,
@@ -87,15 +84,12 @@ class CrossAssociationEngine(nn.Module):
             need_weights=True
         )
         
-        # print(f"Attention output shape: {attn_output.shape}, Attention weights shape: {attn_weights.shape}")
         attn_weights = attn_weights.mean(dim=1)  # (N_tracks, N_dets)
         
         # Apply cost bias if provided
         if cost_vector is not None:
             cost_bias = self.cost_mlp(cost_vector).squeeze(-1)  # (N_tracks, N_dets)
-            # attn_weights = attn_weights - cost_bias
             attn_weights = attn_weights * (1.0 - torch.sigmoid(cost_bias))
-        # print(f"Final attention weights shape: {attn_weights.shape}")
         return attn_weights
 
     def compute_loss(self, attn_weights, gt_matches):

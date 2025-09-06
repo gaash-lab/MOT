@@ -54,7 +54,7 @@ def track(detections, detections_95, data_path, result_folder, mode):
         seq_info = open(data_path + vid_name + '/seqinfo.ini', mode='r')
         for s_i in seq_info.readlines():
             if 'frameRate' in s_i:
-                args.max_time_lost = int(s_i.split('=')[-1])
+                args.max_time_lost = int(s_i.split('=')[-1]) * 2
             if 'imWidth' in s_i:
                 args.img_w = int(s_i.split('=')[-1])
             if 'imHeight' in s_i:
@@ -108,7 +108,7 @@ def run():
             tracker.train_memory_bank()
     else:
         model = PostLinker()
-        model.load_state_dict(torch.load('./AFLink/AFLink_epoch20.pth'))
+        model.load_state_dict(torch.load('AFLink/AFLink_epoch20.pth'))
         aflink_dataset = LinkData('', '')
 
         # Logging & Set proper parameters
@@ -140,7 +140,7 @@ def run():
             # Link
             if 'Dance' in args.dataset:
                 linker = AFLink(path_in=path_in, path_out=path_out, model=model, dataset=aflink_dataset,
-                                thrT=(0, 20), thrS=100, thrP=0.05)
+                                thrT=(0, 15), thrS=70, thrP=0.3)
                 linker.link()
 
             # Gaussian Interpolation

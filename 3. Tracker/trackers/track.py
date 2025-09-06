@@ -66,6 +66,12 @@ class Track(BaseTrack):
         self.feat = detection[6:2054][np.newaxis, :].copy()
         self.pose = detection[2055:]
         # self.age = args.frame_id - self.end_frame_id if hasattr(self, 'end_frame_id') else 0
+        
+    def __str__(self):
+        return (f"ID: {getattr(self, 'track_id', 'None')}, \n"
+            f"Box: {getattr(self, 'box', 'None')}, \n"
+            f"Score: {getattr(self, 'score', 'None')}, \n"
+            f"Pose: {getattr(self, 'pose', 'None')}\n\n\n")
 
     def update_features(self, feat, score):
         # Update and normalize
